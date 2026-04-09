@@ -1,0 +1,18 @@
+{% extends "layouts/base.njk" %}
+
+{% block body %}
+  <div class="app-shell space-y-8">
+    <header class="flex flex-col gap-4 rounded-[2rem] border border-white/70 bg-white/75 px-6 py-5 shadow-panel backdrop-blur lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <p class="text-sm font-semibold uppercase tracking-[0.22em] text-ink/50">{{ t('pages.home.kicker') }}</p>
+        <a class="mt-1 block text-2xl font-bold text-ink" href="/">{{ t('meta.appName') }}</a>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        {% include "partials/locale-switcher.njk" %}
+        <a class="btn-secondary" href="/login">{{ t('shared.buttons.login') }}</a>
+      </div>
+    </header>
+    {% block content %}{% endblock %}
+  </div>
+{% endblock %}
+

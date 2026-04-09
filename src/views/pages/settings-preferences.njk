@@ -1,0 +1,25 @@
+{% extends "layouts/app.njk" %}
+
+{% block title %}{{ t('pages.settingsPreferences.title') }} · {{ t('meta.appName') }}{% endblock %}
+
+{% block content %}
+  <section class="hero-panel">
+    <h2 class="text-4xl text-ink">{{ t('pages.settingsPreferences.heading') }}</h2>
+    <p class="mt-3 max-w-3xl text-lg leading-8 text-ink/70">{{ t('pages.settingsPreferences.description') }}</p>
+  </section>
+  <section class="panel space-y-5">
+    <p class="text-sm text-ink/60">{{ t('pages.settingsPreferences.formHint') }}</p>
+    <form action="/locale" class="space-y-4" method="post">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+      <input type="hidden" name="returnTo" value="/settings/preferences" />
+      <label class="field-label" for="preferences-locale">{{ t('shared.labels.locale') }}</label>
+      <select class="field-select" id="preferences-locale" name="locale">
+        {% for availableLocale in availableLocales %}
+          <option value="{{ availableLocale }}" {% if availableLocale == locale %}selected{% endif %}>{{ availableLocale | upper }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn-primary" type="submit">{{ t('shared.buttons.save') }}</button>
+    </form>
+  </section>
+{% endblock %}
+

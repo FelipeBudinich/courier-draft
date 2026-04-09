@@ -1,0 +1,11 @@
+<form action="/locale" method="post" class="inline-flex items-center gap-3" data-locale-switcher>
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+  <input type="hidden" name="returnTo" value="{{ pathname }}" />
+  <label class="text-sm font-semibold text-ink/70" for="locale-switcher">{{ t('nav.locale') }}</label>
+  <select class="field-select w-auto min-w-28" id="locale-switcher" name="locale">
+    {% for availableLocale in availableLocales %}
+      <option value="{{ availableLocale }}" {% if availableLocale == locale %}selected{% endif %}>{{ availableLocale | upper }}</option>
+    {% endfor %}
+  </select>
+</form>
+

@@ -1,0 +1,50 @@
+import { createServer } from 'node:http';
+import { pathToFileURL } from 'node:url';
+
+import { createApp } from './app.js';
+import { connectToMongo, getMongoClient } from './config/db.js';
+import { env } from './config/env.js';
+import { logger } from './config/logger.js';
+import { createMongoSessionStore } from './config/session.js';
+import { createRealtimeServer } from './sockets/index.js';
+
+export const startServer = async ({ port = env.port } = {}) => {
+  await connectToMongo();
+
+  const sessionStore = createMongoSessionStore({
+    client: getMongoClient()
+  });
+
+  const { app, sessionMiddleware } = createApp({
+    sessionStore
+  });
+
+  const httpServer = createServer(app);
+  const io = createRealtimeServer({
+    httpServer,
+    sessionMiddleware
+  });
+
+  await new Promise((resolve) => {
+    httpServer.listen(port, () => {
+      logger.info({ port }, 'Courier Draft server listening');
+      resolve();
+    });
+  });
+
+  return {
+    app,
+    io,
+    httpServer
+  };
+};
+
+const isEntrypoint =
+  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isEntrypoint) {
+  startServer().catch((error) => {
+    logger.error({ err: error }, 'Failed to start server');
+    process.exit(1);
+  });
+}

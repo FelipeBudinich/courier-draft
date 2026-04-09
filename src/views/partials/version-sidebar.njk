@@ -1,0 +1,19 @@
+<section class="panel space-y-3">
+  <h2 class="text-xl text-ink">{{ t('fragments.versions.heading') }}</h2>
+  {% if versions.length %}
+    <div class="space-y-3">
+      {% for version in versions %}
+        <article class="list-card flex items-center justify-between gap-4">
+          <div>
+            <p class="font-semibold text-ink">{{ version.versionLabel or version.publicId }}</p>
+            <p class="text-xs text-ink/50">{{ formatDate(version.savedAt) }}</p>
+          </div>
+          <span class="badge">{{ version.docType }}</span>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-sm text-ink/60">{{ t('fragments.versions.empty') }}</p>
+  {% endif %}
+</section>
+

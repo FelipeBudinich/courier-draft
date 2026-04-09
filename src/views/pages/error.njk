@@ -1,0 +1,13 @@
+{% extends defaultLayout %}
+
+{% block title %}{{ title }} · {{ t('meta.appName') }}{% endblock %}
+
+{% block content %}
+  <section class="hero-panel space-y-5">
+    <span class="badge">{{ statusCode }}</span>
+    <h2 class="text-4xl text-ink">{{ t('pages.error.heading') }}</h2>
+    <p class="max-w-2xl text-lg leading-8 text-ink/70">{{ message }}</p>
+    <p class="text-sm text-ink/50">{{ t('shared.labels.requestId') }}: {{ requestId }}</p>
+    <a class="btn-primary" href="/">{{ t('pages.error.returnHome') }}</a>
+  </section>
+{% endblock %}

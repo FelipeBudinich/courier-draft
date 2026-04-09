@@ -1,0 +1,196 @@
+{
+  "meta": {
+    "appName": "Courier Draft"
+  },
+  "nav": {
+    "dashboard": "ダッシュボード",
+    "inbox": "受信箱",
+    "profile": "プロフィール",
+    "preferences": "設定",
+    "logout": "ログアウト",
+    "locale": "言語"
+  },
+  "sections": {
+    "projects": "プロジェクト",
+    "activity": "最近のアクティビティ",
+    "members": "メンバー",
+    "scripts": "脚本",
+    "outline": "アウトライン",
+    "scenes": "シーン",
+    "notes": "ノート",
+    "versions": "バージョン",
+    "entities": "エンティティ",
+    "audit": "監査"
+  },
+  "shared": {
+    "buttons": {
+      "login": "サインイン",
+      "openProject": "プロジェクトを開く",
+      "openScript": "脚本を開く",
+      "openEditor": "エディターシェルを開く",
+      "save": "保存",
+      "readDocs": "アーキテクチャ資料を読む",
+      "switchLocale": "言語を切り替える"
+    },
+    "labels": {
+      "email": "メール",
+      "username": "ユーザー名",
+      "displayName": "表示名",
+      "locale": "言語",
+      "role": "役割",
+      "updatedAt": "更新日",
+      "createdAt": "作成日",
+      "requestId": "リクエスト ID",
+      "returnTo": "戻り先"
+    },
+    "badges": {
+      "owner": "オーナー",
+      "editor": "編集者",
+      "reviewer": "レビュアー"
+    },
+    "empty": {
+      "generic": "まだ内容がありません。",
+      "projects": "まだ利用できるプロジェクトがありません。",
+      "activity": "まだ記録されたアクティビティがありません。",
+      "members": "メンバーが見つかりませんでした。",
+      "notes": "まだノートがありません。",
+      "versions": "まだバージョンがありません。"
+    }
+  },
+  "pages": {
+    "home": {
+      "title": "共同脚本の基盤",
+      "kicker": "プラットフォーム基盤",
+      "description": "Courier Draft は Express、Nunjucks、Tailwind、MongoDB Atlas、Socket.IO を土台にした、サーバーレンダリングの脚本コラボレーション基盤です。",
+      "architectureTitle": "アーキテクチャ主導の立ち上げ",
+      "architectureBody": "このリポジトリは明確なルートマップとリアルタイム契約から始まり、後続エピックが安定した HTTP、フラグメント、ソケット面に接続できるようにしています。"
+    },
+    "login": {
+      "title": "サインイン",
+      "heading": "Courier Draft にサインイン",
+      "description": "Google OAuth のルートは足場ができており、ローカル開発では有効時にシード済みバイパスを利用できます。",
+      "googleCta": "Google で続行（足場のみ）",
+      "googleDisclaimer": "完全な OAuth フローは後続エピックに意図的に残しています。",
+      "devHeading": "開発用サインイン",
+      "devDescription": "シード済みユーザーを使うことで、本番 OAuth 実装前でもアプリシェル、認可、e2e フローを確認できます。",
+      "submit": "アプリに入る"
+    },
+    "oauth": {
+      "title": "Google OAuth 足場",
+      "heading": "Google OAuth は足場のみです",
+      "description": "このルートは公開インターフェースを変えずに、後続の認証エピックで本物の OAuth 交換を差し込めるようにするためのものです。"
+    },
+    "oauthCallback": {
+      "title": "OAuth コールバック足場",
+      "heading": "OAuth コールバックのプレースホルダー",
+      "description": "コールバックのルートは用意されていますが、実際のトークン交換は意図的に後続エピックへ延期しています。"
+    },
+    "dashboard": {
+      "title": "ダッシュボード",
+      "heading": "ワークスペース ダッシュボード",
+      "description": "このシェルでは、より深い業務フローが後続エピックに残っていても、シード済みプロジェクトと永続的なアクティビティを確認できます。"
+    },
+    "inbox": {
+      "title": "受信箱",
+      "heading": "受信箱の基盤",
+      "description": "招待と通知の仕組みは後続エピックで拡張されます。React を使わない差し替え用フラグメントルートはすでにあります。"
+    },
+    "settingsProfile": {
+      "title": "プロフィール",
+      "heading": "プロフィール設定",
+      "description": "プロフィール項目は `/api/v1/me` の基盤エンドポイントですでに利用できます。",
+      "apiHint": "永続的なプロフィール更新には `PATCH /api/v1/me` を使います。"
+    },
+    "settingsPreferences": {
+      "title": "設定",
+      "heading": "設定",
+      "description": "言語切り替えは cookie、テンプレート、永続化されたユーザー設定まで配線済みです。",
+      "formHint": "以下のフォームは `/locale` に送信されます。同じ設定は `/api/v1/me/preferences` でも永続化されます。"
+    },
+    "newProject": {
+      "title": "新しいプロジェクト",
+      "heading": "プロジェクト作成の足場",
+      "description": "永続的なプロジェクト作成は後続エピックですが、SSR の入口ページはすでに用意されています。"
+    },
+    "newScript": {
+      "title": "新しい脚本",
+      "heading": "脚本作成の足場",
+      "description": "編集者とオーナーはこのページに入れますが、実際の作成処理は API 足場のまま後続エピックに残しています。"
+    },
+    "projectOverview": {
+      "heading": "プロジェクト概要",
+      "description": "ワークスペースの主要面は、実際のプロジェクトメンバーシップと脚本レコードの上に配線されています。"
+    },
+    "projectMembers": {
+      "heading": "プロジェクトメンバー",
+      "description": "このプロジェクトの現在のメンバーと役割です。"
+    },
+    "projectActivity": {
+      "heading": "プロジェクト アクティビティ",
+      "description": "最近の永続的アクティビティには、すでに実データモデルと一覧面があります。"
+    },
+    "projectAudit": {
+      "heading": "監査ログ",
+      "description": "オーナー専用の運用履歴で、後のリリース強化に備えています。"
+    },
+    "projectCharacters": {
+      "heading": "キャラクター台帳",
+      "description": "プロジェクトの正規エンティティは今後のエピックでここに増えていきます。"
+    },
+    "projectLocations": {
+      "heading": "ロケーション台帳",
+      "description": "ロケーション エンティティには実ストレージとインデックスがすでにあります。"
+    },
+    "projectSettings": {
+      "heading": "プロジェクト設定",
+      "description": "オーナー専用設定はすでに保護されており、業務ロジックの更新は後続エピックへ残しています。"
+    },
+    "script": {
+      "heading": "脚本概要",
+      "description": "アウトライン、シーン、エディター入口は実モデルとプレースホルダー API に接続されています。"
+    },
+    "editor": {
+      "heading": "エディターシェルの足場",
+      "description": "共同編集そのものは後続ですが、シェル、ルーム契約、役割に応じた編集可否は準備済みです。",
+      "socketNamespace": "ソケット名前空間",
+      "canEdit": "このユーザーは今後の共同編集フローで編集できます。",
+      "readOnly": "このユーザーは読み取り専用でシーンに参加します。"
+    },
+    "todo": {
+      "title": "基盤プレースホルダー",
+      "heading": "この画面は足場までできています",
+      "description": "ルート、認可、レンダリング経路は後続エピックのために準備済みです。"
+    },
+    "error": {
+      "heading": "対応が必要です",
+      "returnHome": "ホームへ戻る"
+    }
+  },
+  "fragments": {
+    "invites": {
+      "heading": "招待",
+      "empty": "現在待機中の招待はありません。"
+    },
+    "activity": {
+      "heading": "アクティビティ フィード",
+      "empty": "まだプロジェクト アクティビティはありません。"
+    },
+    "members": {
+      "heading": "メンバー一覧",
+      "empty": "このプロジェクトのメンバーはまだいません。"
+    },
+    "outline": {
+      "heading": "アウトライン ツリー",
+      "empty": "まだアウトライン ノードがありません。"
+    },
+    "notes": {
+      "heading": "ノート パネル",
+      "empty": "まだノートがありません。"
+    },
+    "versions": {
+      "heading": "バージョン サイドバー",
+      "empty": "まだ利用できるバージョンがありません。"
+    }
+  }
+}
+

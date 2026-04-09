@@ -1,0 +1,11 @@
+<section class="panel space-y-3">
+  <h2 class="text-xl text-ink">{{ t('fragments.invites.heading') }}</h2>
+  {% if invites.length %}
+    {% for invite in invites %}
+      <div class="list-card">{{ invite }}</div>
+    {% endfor %}
+  {% else %}
+    <p class="text-sm text-ink/60">{{ t('fragments.invites.empty') }}</p>
+  {% endif %}
+</section>
+

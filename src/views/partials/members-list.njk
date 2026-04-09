@@ -1,0 +1,19 @@
+<section class="panel space-y-3">
+  <h2 class="text-xl text-ink">{{ t('fragments.members.heading') }}</h2>
+  {% if members.length %}
+    <div class="space-y-3">
+      {% for member in members %}
+        <article class="list-card flex items-center justify-between gap-4">
+          <div>
+            <p class="font-semibold text-ink">{{ member.userId.displayName }}</p>
+            <p class="text-sm text-ink/60">{{ member.userId.email }}</p>
+          </div>
+          <span class="badge">{{ t('shared.badges.' + member.role) }}</span>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-sm text-ink/60">{{ t('fragments.members.empty') }}</p>
+  {% endif %}
+</section>
+

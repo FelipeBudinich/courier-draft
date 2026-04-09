@@ -1,0 +1,27 @@
+{% extends "layouts/public.njk" %}
+
+{% block title %}{{ t('pages.home.title') }} · {{ t('meta.appName') }}{% endblock %}
+
+{% block content %}
+  <section class="hero-panel grid gap-8 lg:grid-cols-[1.2fr,0.8fr]">
+    <div class="space-y-5">
+      <p class="text-sm font-semibold uppercase tracking-[0.22em] text-accent">{{ t('pages.home.kicker') }}</p>
+      <h1 class="max-w-3xl text-5xl leading-tight text-ink">{{ t('pages.home.title') }}</h1>
+      <p class="max-w-2xl text-lg leading-8 text-ink/70">{{ t('pages.home.description') }}</p>
+      <div class="flex flex-wrap gap-3">
+        <a class="btn-primary" href="/login">{{ t('shared.buttons.login') }}</a>
+        <a class="btn-secondary" href="/docs/architecture/route-map.md">{{ t('shared.buttons.readDocs') }}</a>
+      </div>
+    </div>
+    <div class="panel-muted space-y-4">
+      <h2 class="text-2xl text-ink">{{ t('pages.home.architectureTitle') }}</h2>
+      <p class="leading-7 text-ink/70">{{ t('pages.home.architectureBody') }}</p>
+      <ul class="space-y-3 text-sm text-ink/70">
+        <li>SSR at `/`, JSON APIs at `/api/v1`, fragments at `/fragments`, sockets at `/collab`.</li>
+        <li>Durable writes remain HTTP-first, while realtime concerns stay in Socket.IO.</li>
+        <li>English, Spanish, and Japanese ship together from the first foundation PR.</li>
+      </ul>
+    </div>
+  </section>
+{% endblock %}
+

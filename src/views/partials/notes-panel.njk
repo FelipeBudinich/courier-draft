@@ -1,0 +1,16 @@
+<section class="panel space-y-3">
+  <h2 class="text-xl text-ink">{{ t('fragments.notes.heading') }}</h2>
+  {% if notes.length %}
+    <div class="space-y-3">
+      {% for note in notes %}
+        <article class="list-card">
+          <p class="text-sm leading-6 text-ink">{{ note.body }}</p>
+          <p class="mt-2 text-xs text-ink/50">{{ formatDate(note.updatedAt) }}</p>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-sm text-ink/60">{{ t('fragments.notes.empty') }}</p>
+  {% endif %}
+</section>
+

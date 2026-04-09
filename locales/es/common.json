@@ -1,0 +1,196 @@
+{
+  "meta": {
+    "appName": "Courier Draft"
+  },
+  "nav": {
+    "dashboard": "Panel",
+    "inbox": "Bandeja",
+    "profile": "Perfil",
+    "preferences": "Preferencias",
+    "logout": "Cerrar sesión",
+    "locale": "Idioma"
+  },
+  "sections": {
+    "projects": "Proyectos",
+    "activity": "Actividad reciente",
+    "members": "Miembros",
+    "scripts": "Guiones",
+    "outline": "Esquema",
+    "scenes": "Escenas",
+    "notes": "Notas",
+    "versions": "Versiones",
+    "entities": "Entidades",
+    "audit": "Auditoría"
+  },
+  "shared": {
+    "buttons": {
+      "login": "Iniciar sesión",
+      "openProject": "Abrir proyecto",
+      "openScript": "Abrir guion",
+      "openEditor": "Abrir editor",
+      "save": "Guardar",
+      "readDocs": "Leer la documentación de arquitectura",
+      "switchLocale": "Cambiar idioma"
+    },
+    "labels": {
+      "email": "Correo",
+      "username": "Usuario",
+      "displayName": "Nombre visible",
+      "locale": "Idioma",
+      "role": "Rol",
+      "updatedAt": "Actualizado",
+      "createdAt": "Creado",
+      "requestId": "ID de solicitud",
+      "returnTo": "Volver a"
+    },
+    "badges": {
+      "owner": "Propietario",
+      "editor": "Editor",
+      "reviewer": "Revisor"
+    },
+    "empty": {
+      "generic": "Todavía no hay contenido aquí.",
+      "projects": "Todavía no hay proyectos disponibles.",
+      "activity": "Todavía no hay actividad registrada.",
+      "members": "No se encontraron miembros.",
+      "notes": "Todavía no hay notas.",
+      "versions": "Todavía no hay versiones."
+    }
+  },
+  "pages": {
+    "home": {
+      "title": "Base colaborativa para guiones",
+      "kicker": "Fundación de plataforma",
+      "description": "Courier Draft es una plataforma colaborativa renderizada en servidor para equipos de guion, construida con Express, Nunjucks, Tailwind, MongoDB Atlas y Socket.IO.",
+      "architectureTitle": "Entrega guiada por arquitectura",
+      "architectureBody": "Este repositorio parte de un mapa de rutas y un contrato realtime claros para que los próximos épicos se conecten a superficies HTTP, fragmentos y sockets estables."
+    },
+    "login": {
+      "title": "Iniciar sesión",
+      "heading": "Entra a Courier Draft",
+      "description": "Las rutas de Google OAuth están preparadas y el desarrollo local puede usar el acceso sembrado cuando está habilitado.",
+      "googleCta": "Continuar con Google (base)",
+      "googleDisclaimer": "El intercambio OAuth completo se deja para un épico posterior.",
+      "devHeading": "Acceso de desarrollo",
+      "devDescription": "Usa un usuario sembrado para que la shell, la autorización y el flujo e2e funcionen antes de implementar el OAuth real.",
+      "submit": "Entrar a la app"
+    },
+    "oauth": {
+      "title": "Base de Google OAuth",
+      "heading": "Google OAuth está preparado, pero no completo",
+      "description": "Esta ruta existe para que el próximo épico de autenticación conecte el intercambio OAuth real sin cambiar la superficie pública."
+    },
+    "oauthCallback": {
+      "title": "Base del callback OAuth",
+      "heading": "Placeholder del callback OAuth",
+      "description": "La ruta del callback ya existe, pero el intercambio real de tokens se posterga intencionalmente."
+    },
+    "dashboard": {
+      "title": "Panel",
+      "heading": "Panel de trabajo",
+      "description": "Esta shell muestra proyectos sembrados y actividad durable real mientras los flujos de negocio más profundos siguen en modo scaffold."
+    },
+    "inbox": {
+      "title": "Bandeja",
+      "heading": "Base de la bandeja",
+      "description": "Las invitaciones y notificaciones crecerán en épicos posteriores. La ruta de fragmento ya existe para swaps sin React."
+    },
+    "settingsProfile": {
+      "title": "Perfil",
+      "heading": "Configuración de perfil",
+      "description": "Los campos de perfil ya están disponibles a través del endpoint base `/api/v1/me`.",
+      "apiHint": "Usa `PATCH /api/v1/me` para actualizar el perfil de forma durable."
+    },
+    "settingsPreferences": {
+      "title": "Preferencias",
+      "heading": "Preferencias",
+      "description": "El cambio de idioma ya funciona con cookies, plantillas y preferencias persistidas del usuario.",
+      "formHint": "El formulario envía a `/locale`; la ruta API persiste la misma preferencia mediante `/api/v1/me/preferences`."
+    },
+    "newProject": {
+      "title": "Nuevo proyecto",
+      "heading": "Scaffold de creación de proyecto",
+      "description": "La creación durable del proyecto llegará en un épico posterior, pero la entrada SSR ya está lista."
+    },
+    "newScript": {
+      "title": "Nuevo guion",
+      "heading": "Scaffold de creación de guion",
+      "description": "Editores y propietarios ya pueden entrar aquí; la mutación real sigue reservada para la API scaffolded."
+    },
+    "projectOverview": {
+      "heading": "Resumen del proyecto",
+      "description": "Las superficies principales del espacio de trabajo ya giran alrededor de membresías y guiones reales."
+    },
+    "projectMembers": {
+      "heading": "Miembros del proyecto",
+      "description": "Membresías y roles actuales del proyecto."
+    },
+    "projectActivity": {
+      "heading": "Actividad del proyecto",
+      "description": "La actividad durable reciente ya tiene modelo real y superficie de listado."
+    },
+    "projectAudit": {
+      "heading": "Registro de auditoría",
+      "description": "Historial operativo solo para propietarios, listo para endurecimiento de release."
+    },
+    "projectCharacters": {
+      "heading": "Registro de personajes",
+      "description": "Las entidades canónicas del proyecto crecerán aquí en los siguientes épicos."
+    },
+    "projectLocations": {
+      "heading": "Registro de locaciones",
+      "description": "Las locaciones ya tienen almacenamiento e índices reales."
+    },
+    "projectSettings": {
+      "heading": "Configuración del proyecto",
+      "description": "La configuración solo para propietarios ya está protegida; las mutaciones de negocio llegan después."
+    },
+    "script": {
+      "heading": "Resumen del guion",
+      "description": "El esquema, las escenas y la entrada al editor ya están conectados a modelos reales y APIs placeholder."
+    },
+    "editor": {
+      "heading": "Scaffold de la shell del editor",
+      "description": "El editor colaborativo completo se posterga, pero la shell, el contrato de rooms y la editabilidad por rol ya están listas.",
+      "socketNamespace": "Namespace del socket",
+      "canEdit": "Este usuario podrá editar en los futuros flujos colaborativos.",
+      "readOnly": "Este usuario entra a la escena en modo solo lectura."
+    },
+    "todo": {
+      "title": "Placeholder de la fundación",
+      "heading": "Esta superficie ya está scaffolded",
+      "description": "La ruta, la autorización y el render ya están listos para un épico posterior."
+    },
+    "error": {
+      "heading": "Algo necesita atención",
+      "returnHome": "Volver al inicio"
+    }
+  },
+  "fragments": {
+    "invites": {
+      "heading": "Invitaciones",
+      "empty": "No hay invitaciones pendientes."
+    },
+    "activity": {
+      "heading": "Feed de actividad",
+      "empty": "Todavía no hay actividad del proyecto."
+    },
+    "members": {
+      "heading": "Lista de miembros",
+      "empty": "No hay miembros disponibles para este proyecto."
+    },
+    "outline": {
+      "heading": "Árbol del esquema",
+      "empty": "Todavía no existen nodos del esquema."
+    },
+    "notes": {
+      "heading": "Panel de notas",
+      "empty": "Todavía no hay notas adjuntas."
+    },
+    "versions": {
+      "heading": "Barra lateral de versiones",
+      "empty": "Todavía no hay versiones disponibles."
+    }
+  }
+}
+

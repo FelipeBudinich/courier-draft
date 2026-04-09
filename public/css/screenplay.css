@@ -1,0 +1,39 @@
+:root {
+  --page-us-letter-width: 8.5in;
+  --page-us-letter-height: 11in;
+  --page-us-letter-margin-top: 1in;
+  --page-us-letter-margin-right: 1in;
+  --page-us-letter-margin-bottom: 1in;
+  --page-us-letter-margin-left: 1.5in;
+  --page-us-letter-line-height: 12pt;
+  --page-9x16-width: 6.1875in;
+  --page-9x16-height: 11in;
+  --page-9x16-margin-top: 0.75in;
+  --page-9x16-margin-right: 0.625in;
+  --page-9x16-margin-bottom: 0.75in;
+  --page-9x16-margin-left: 0.875in;
+  --screenplay-font-size: 12pt;
+  --screenplay-page-background: #fffdf8;
+}
+
+.screenplay-page {
+  width: var(--page-us-letter-width);
+  min-height: var(--page-us-letter-height);
+  padding:
+    var(--page-us-letter-margin-top)
+    var(--page-us-letter-margin-right)
+    var(--page-us-letter-margin-bottom)
+    var(--page-us-letter-margin-left);
+  background: var(--screenplay-page-background);
+}
+
+.screenplay-page--mobile {
+  width: var(--page-9x16-width);
+  min-height: var(--page-9x16-height);
+  padding:
+    var(--page-9x16-margin-top)
+    var(--page-9x16-margin-right)
+    var(--page-9x16-margin-bottom)
+    var(--page-9x16-margin-left);
+}
+

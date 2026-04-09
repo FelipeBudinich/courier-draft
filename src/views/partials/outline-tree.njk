@@ -1,0 +1,16 @@
+<section class="panel space-y-3">
+  <h2 class="text-xl text-ink">{{ t('fragments.outline.heading') }}</h2>
+  {% if outlineNodes.length %}
+    <ol class="space-y-2">
+      {% for node in outlineNodes %}
+        <li class="list-card flex items-center justify-between gap-3">
+          <span class="font-semibold text-ink">{{ node.title }}</span>
+          <span class="badge">{{ node.type }}</span>
+        </li>
+      {% endfor %}
+    </ol>
+  {% else %}
+    <p class="text-sm text-ink/60">{{ t('fragments.outline.empty') }}</p>
+  {% endif %}
+</section>
+

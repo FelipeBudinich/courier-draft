@@ -1,0 +1,16 @@
+<section class="panel space-y-3">
+  <h2 class="text-xl text-ink">{{ t('fragments.activity.heading') }}</h2>
+  {% if activity.length %}
+    <div class="space-y-3">
+      {% for item in activity %}
+        <article class="list-card">
+          <p class="font-semibold text-ink">{{ item.message }}</p>
+          <p class="mt-1 text-xs text-ink/50">{{ formatDate(item.createdAt) }}</p>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-sm text-ink/60">{{ t('fragments.activity.empty') }}</p>
+  {% endif %}
+</section>
+

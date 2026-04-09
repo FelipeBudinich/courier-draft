@@ -1,0 +1,12 @@
+{% extends defaultLayout %}
+
+{% block title %}{{ titleKey and t(titleKey) or t('pages.todo.title') }} · {{ t('meta.appName') }}{% endblock %}
+
+{% block content %}
+  <section class="hero-panel">
+    <h2 class="text-4xl text-ink">{{ headingKey and t(headingKey) or t('pages.todo.heading') }}</h2>
+    <p class="mt-3 max-w-3xl text-lg leading-8 text-ink/70">
+      {{ descriptionKey and t(descriptionKey) or t('pages.todo.description') }}
+    </p>
+  </section>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "layouts/app.njk" %}
+
+{% block title %}{{ script.title }} · {{ t('meta.appName') }}{% endblock %}
+
+{% block content %}
+  <section class="hero-panel">
+    <p class="text-sm font-semibold uppercase tracking-[0.2em] text-accent">{{ script.publicId }}</p>
+    <h2 class="mt-3 text-4xl text-ink">{{ script.title }}</h2>
+    <p class="mt-3 max-w-3xl text-lg leading-8 text-ink/70">{{ t('pages.script.description') }}</p>
+    <div class="mt-5 flex flex-wrap gap-3">
+      <a class="btn-primary" href="/projects/{{ project.publicId }}/scripts/{{ script.publicId }}/editor">{{ t('shared.buttons.openEditor') }}</a>
+    </div>
+  </section>
+  <section class="grid gap-6 xl:grid-cols-[1fr,1fr]">
+    <article class="panel space-y-4">
+      <h3 class="text-2xl text-ink">{{ t('sections.outline') }}</h3>
+      {% if outlineNodes.length %}
+        <div class="space-y-3">
+          {% for node in outlineNodes %}
+            <article class="list-card flex items-center justify-between gap-4">
+              <div>
+                <p class="font-semibold text-ink">{{ node.title }}</p>
+                <p class="text-sm text-ink/60">{{ node.autoSceneNumber or node.positionKey }}</p>
+              </div>
+              <span class="badge">{{ node.type }}</span>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-sm text-ink/60">{{ t('shared.empty.generic') }}</p>
+      {% endif %}
+    </article>
+    <article class="panel space-y-4">
+      <h3 class="text-2xl text-ink">{{ t('sections.scenes') }}</h3>
+      {% if scenes.length %}
+        <div class="space-y-3">
+          {% for scene in scenes %}
+            <article class="list-card">
+              <p class="font-semibold text-ink">{{ scene.title }}</p>
+              <p class="text-sm text-ink/60">{{ formatDate(scene.updatedAt) }}</p>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-sm text-ink/60">{{ t('shared.empty.generic') }}</p>
+      {% endif %}
+    </article>
+  </section>
+{% endblock %}
+

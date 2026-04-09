@@ -1,0 +1,196 @@
+{
+  "meta": {
+    "appName": "Courier Draft"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "inbox": "Inbox",
+    "profile": "Profile",
+    "preferences": "Preferences",
+    "logout": "Log out",
+    "locale": "Locale"
+  },
+  "sections": {
+    "projects": "Projects",
+    "activity": "Recent activity",
+    "members": "Members",
+    "scripts": "Scripts",
+    "outline": "Outline",
+    "scenes": "Scenes",
+    "notes": "Notes",
+    "versions": "Versions",
+    "entities": "Entities",
+    "audit": "Audit"
+  },
+  "shared": {
+    "buttons": {
+      "login": "Sign in",
+      "openProject": "Open project",
+      "openScript": "Open script",
+      "openEditor": "Open editor shell",
+      "save": "Save",
+      "readDocs": "Read the architecture docs",
+      "switchLocale": "Switch locale"
+    },
+    "labels": {
+      "email": "Email",
+      "username": "Username",
+      "displayName": "Display name",
+      "locale": "Locale",
+      "role": "Role",
+      "updatedAt": "Updated",
+      "createdAt": "Created",
+      "requestId": "Request ID",
+      "returnTo": "Return to"
+    },
+    "badges": {
+      "owner": "Owner",
+      "editor": "Editor",
+      "reviewer": "Reviewer"
+    },
+    "empty": {
+      "generic": "Nothing has landed here yet.",
+      "projects": "No projects are available yet.",
+      "activity": "No activity has been recorded yet.",
+      "members": "No members were found.",
+      "notes": "No notes have been created yet.",
+      "versions": "No versions are available yet."
+    }
+  },
+  "pages": {
+    "home": {
+      "title": "Collaborative screenwriting foundation",
+      "kicker": "Platform foundation",
+      "description": "Courier Draft is a server-rendered collaboration platform for screenplay teams, built around Express, Nunjucks, Tailwind, MongoDB Atlas, and Socket.IO scaffolding.",
+      "architectureTitle": "Architecture-first delivery",
+      "architectureBody": "This repository starts from a clear route map and realtime contract so later epics can plug into stable HTTP, fragment, and socket surfaces."
+    },
+    "login": {
+      "title": "Sign in",
+      "heading": "Sign in to Courier Draft",
+      "description": "Google OAuth routes are scaffolded, and local development can use the seeded bypass when it is enabled.",
+      "googleCta": "Continue with Google (scaffold)",
+      "googleDisclaimer": "The full OAuth exchange is intentionally deferred to a later epic.",
+      "devHeading": "Development sign-in",
+      "devDescription": "Use a seeded local user so the app shell, authz, and e2e flow can run before the real OAuth implementation lands.",
+      "submit": "Enter the app"
+    },
+    "oauth": {
+      "title": "Google OAuth scaffold",
+      "heading": "Google OAuth is scaffolded, not completed",
+      "description": "This route exists so the later auth epic can plug in the real OAuth exchange without changing the public surface."
+    },
+    "oauthCallback": {
+      "title": "OAuth callback scaffold",
+      "heading": "OAuth callback placeholder",
+      "description": "The callback route is wired for later work, but the real token exchange is intentionally deferred to a future epic."
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "heading": "Workspace dashboard",
+      "description": "This shell shows real seeded projects and durable activity while the deeper business flows are still scaffolded."
+    },
+    "inbox": {
+      "title": "Inbox",
+      "heading": "Inbox foundation",
+      "description": "Invite and notification plumbing will expand in later epics. The fragment route already exists for no-React swaps."
+    },
+    "settingsProfile": {
+      "title": "Profile",
+      "heading": "Profile settings",
+      "description": "Profile fields are available now through the `/api/v1/me` foundation endpoint.",
+      "apiHint": "Use `PATCH /api/v1/me` for durable profile updates."
+    },
+    "settingsPreferences": {
+      "title": "Preferences",
+      "heading": "Preferences",
+      "description": "Locale switching is fully wired through cookies, templates, and persisted user preferences.",
+      "formHint": "The form below posts to `/locale`; the API path persists the same preference through `/api/v1/me/preferences`."
+    },
+    "newProject": {
+      "title": "New project",
+      "heading": "Project creation scaffold",
+      "description": "The durable create-project flow belongs to a later business epic, but the SSR entry page is ready now."
+    },
+    "newScript": {
+      "title": "New script",
+      "heading": "Script creation scaffold",
+      "description": "Editors and owners can already reach this page; the actual creation mutation remains HTTP-scaffolded in the API."
+    },
+    "projectOverview": {
+      "heading": "Project overview",
+      "description": "Core workspace surfaces are wired around real project membership and script records."
+    },
+    "projectMembers": {
+      "heading": "Project members",
+      "description": "Current membership and roles for this project."
+    },
+    "projectActivity": {
+      "heading": "Project activity",
+      "description": "Recent durable activity already has a real model and list surface."
+    },
+    "projectAudit": {
+      "heading": "Project audit log",
+      "description": "Owner-only operational history for later release hardening."
+    },
+    "projectCharacters": {
+      "heading": "Character registry",
+      "description": "Canonical project entities will grow here as later epics land."
+    },
+    "projectLocations": {
+      "heading": "Location registry",
+      "description": "Location entities are scaffolded with real storage and indexes."
+    },
+    "projectSettings": {
+      "heading": "Project settings",
+      "description": "Owner-only settings are routed and protected now, with business mutations deferred to later epics."
+    },
+    "script": {
+      "heading": "Script overview",
+      "description": "Outline, scenes, and editor entry points are connected to real models and placeholder APIs."
+    },
+    "editor": {
+      "heading": "Editor shell scaffold",
+      "description": "The collaborative editor itself is deferred, but the shell, room contract, and role-aware editability are ready.",
+      "socketNamespace": "Socket namespace",
+      "canEdit": "This user can edit in future collaboration flows.",
+      "readOnly": "This user joins the scene in read-only mode."
+    },
+    "todo": {
+      "title": "Foundation placeholder",
+      "heading": "This surface is scaffolded",
+      "description": "The route, authz, and rendering path are ready for a later epic."
+    },
+    "error": {
+      "heading": "Something needs attention",
+      "returnHome": "Return home"
+    }
+  },
+  "fragments": {
+    "invites": {
+      "heading": "Invites",
+      "empty": "No invites are waiting right now."
+    },
+    "activity": {
+      "heading": "Activity feed",
+      "empty": "No project activity has been recorded yet."
+    },
+    "members": {
+      "heading": "Member list",
+      "empty": "No members are available for this project."
+    },
+    "outline": {
+      "heading": "Outline tree",
+      "empty": "No outline nodes exist yet."
+    },
+    "notes": {
+      "heading": "Notes panel",
+      "empty": "No notes are attached yet."
+    },
+    "versions": {
+      "heading": "Version sidebar",
+      "empty": "No versions are available yet."
+    }
+  }
+}
+
