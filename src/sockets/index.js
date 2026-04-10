@@ -10,6 +10,8 @@ import {
   findScriptByPublicId
 } from '../models/lookups.js';
 import { roleHelpers } from '../middleware/auth.js';
+import { hasCompletedOnboarding } from '../services/auth/service.js';
+import { registerRealtimeServer } from '../services/realtime/broadcaster.js';
 import { roomHelpers } from './rooms.js';
 import { presenceStore } from './presence-store.js';
 
@@ -121,7 +123,14 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
       return next(new Error('AUTH_REQUIRED'));
     }
 
+    if (!hasCompletedOnboarding(user)) {
+      logger.warn({ socketId: socket.id, sessionUserId }, 'Socket auth failed: onboarding incomplete');
+      return next(new Error('ONBOARDING_REQUIRED'));
+    }
+
     socket.data.user = user;
+    socket.data.joinedProjectIds = new Set();
+    socket.data.projectScopedRooms = new Map();
     socket.join(roomHelpers.user(user.publicId));
     next();
   });
@@ -147,6 +156,7 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
         }
 
         socket.join(roomHelpers.project(projectId));
+        socket.data.joinedProjectIds.add(projectId);
         const { entry, isFirstConnection, snapshot } = presenceStore.joinProject(
           projectId,
           user,
@@ -176,6 +186,17 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
     socket.on('project:leave', async (payload, ack) => {
       await withValidation(projectSchema, payload, ack, async ({ projectId }) => {
         socket.leave(roomHelpers.project(projectId));
+        socket.data.joinedProjectIds.delete(projectId);
+
+        for (const [roomName, scopedProjectId] of socket.data.projectScopedRooms.entries()) {
+          if (scopedProjectId !== projectId) {
+            continue;
+          }
+
+          socket.leave(roomName);
+          socket.data.projectScopedRooms.delete(roomName);
+        }
+
         const { removed } = presenceStore.leaveProject(projectId, user.publicId, socket.id);
         if (removed) {
           collab.to(roomHelpers.project(projectId)).emit('presence:user-left', {
@@ -210,6 +231,7 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
         }
 
         socket.join(roomHelpers.script(scriptId));
+        socket.data.projectScopedRooms.set(roomHelpers.script(scriptId), projectId);
         const data = {
           projectId,
           scriptId,
@@ -225,6 +247,7 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
     socket.on('script:leave', async (payload, ack) => {
       await withValidation(scriptSchema, payload, ack, async ({ scriptId }) => {
         socket.leave(roomHelpers.script(scriptId));
+        socket.data.projectScopedRooms.delete(roomHelpers.script(scriptId));
         ack?.(ackOk({ scriptId }));
       });
     });
@@ -261,6 +284,7 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
         }
 
         socket.join(roomHelpers.scene(sceneId));
+        socket.data.projectScopedRooms.set(roomHelpers.scene(sceneId), projectId);
         const data = {
           sceneId,
           canEdit: roleHelpers.canEditProjectContent(membership.role),
@@ -278,6 +302,7 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
     socket.on('scene:leave', async (payload, ack) => {
       await withValidation(leaveSceneSchema, payload, ack, async ({ sceneId }) => {
         socket.leave(roomHelpers.scene(sceneId));
+        socket.data.projectScopedRooms.delete(roomHelpers.scene(sceneId));
         ack?.(ackOk({ sceneId }));
       });
     });
@@ -305,6 +330,7 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
         }
 
         socket.join(roomHelpers.note(noteId));
+        socket.data.projectScopedRooms.set(roomHelpers.note(noteId), projectId);
         const data = {
           noteId,
           canEdit: roleHelpers.canEditNote(membership.role, user._id, note.authorId),
@@ -323,6 +349,7 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
     socket.on('note:leave', async (payload, ack) => {
       await withValidation(leaveNoteSchema, payload, ack, async ({ noteId }) => {
         socket.leave(roomHelpers.note(noteId));
+        socket.data.projectScopedRooms.delete(roomHelpers.note(noteId));
         ack?.(ackOk({ noteId }));
       });
     });
@@ -386,5 +413,6 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
     });
   });
 
+  registerRealtimeServer(io);
   return io;
 };

@@ -13,72 +13,6 @@ import { sendNotImplemented } from './helpers.js';
 const router = Router();
 
 const placeholderRoutes = [
-  { method: 'get', path: '/users/search', todo: 'User search read model' },
-  { method: 'get', path: '/invites', todo: 'Invite listing' },
-  { method: 'post', path: '/invites/:inviteId/accept', todo: 'Invite acceptance flow' },
-  { method: 'post', path: '/invites/:inviteId/decline', todo: 'Invite decline flow' },
-  { method: 'get', path: '/projects', todo: 'Project listing read model' },
-  { method: 'post', path: '/projects', todo: 'Project creation flow' },
-  {
-    method: 'get',
-    path: '/projects/:projectId',
-    todo: 'Project detail read model',
-    project: true
-  },
-  {
-    method: 'patch',
-    path: '/projects/:projectId',
-    todo: 'Project update command',
-    project: true,
-    role: 'owner'
-  },
-  {
-    method: 'get',
-    path: '/projects/:projectId/members',
-    todo: 'Project members API',
-    project: true
-  },
-  {
-    method: 'post',
-    path: '/projects/:projectId/invites',
-    todo: 'Project invite creation',
-    project: true,
-    role: 'owner'
-  },
-  {
-    method: 'patch',
-    path: '/projects/:projectId/members/:memberId',
-    todo: 'Project member role update',
-    project: true,
-    role: 'owner'
-  },
-  {
-    method: 'delete',
-    path: '/projects/:projectId/members/:memberId',
-    todo: 'Project member removal',
-    project: true,
-    role: 'owner'
-  },
-  {
-    method: 'post',
-    path: '/projects/:projectId/ownership-transfer',
-    todo: 'Ownership transfer',
-    project: true,
-    role: 'owner'
-  },
-  {
-    method: 'get',
-    path: '/projects/:projectId/activity',
-    todo: 'Project activity API',
-    project: true
-  },
-  {
-    method: 'get',
-    path: '/projects/:projectId/audit',
-    todo: 'Project audit API',
-    project: true,
-    role: 'owner'
-  },
   {
     method: 'get',
     path: '/projects/:projectId/scripts',
@@ -371,4 +305,3 @@ for (const route of placeholderRoutes) {
 }
 
 export default router;
-

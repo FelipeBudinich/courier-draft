@@ -6,13 +6,27 @@
       <div>
         <p class="text-xs font-semibold uppercase tracking-[0.22em] text-ink/45">{{ t('meta.appName') }}</p>
         <h1 class="mt-2 text-3xl text-ink">{{ currentUser.displayName }}</h1>
-        <p class="text-sm text-ink/60">@{{ currentUser.username }}</p>
+        <p class="text-sm text-ink/60">
+          {% if currentUser.username %}
+            @{{ currentUser.username }}
+          {% else %}
+            {{ t('pages.settingsProfile.onboardingBadge') }}
+          {% endif %}
+        </p>
       </div>
+      {% if onboardingRequired %}
+        <div class="rounded-3xl border border-accent/20 bg-accent/10 px-4 py-4 text-sm text-ink/80">
+          <p class="font-semibold text-ink">{{ t('pages.settingsProfile.onboardingHeading') }}</p>
+          <p class="mt-2">{{ t('pages.settingsProfile.onboardingNotice') }}</p>
+        </div>
+      {% endif %}
       <nav class="space-y-2">
-        <a class="block rounded-2xl px-4 py-3 hover:bg-mist/70 {% if pathname == '/app' %}bg-mist{% endif %}" href="/app">{{ t('nav.dashboard') }}</a>
-        <a class="block rounded-2xl px-4 py-3 hover:bg-mist/70 {% if pathname == '/inbox' %}bg-mist{% endif %}" href="/inbox">{{ t('nav.inbox') }}</a>
+        {% if not onboardingRequired %}
+          <a class="block rounded-2xl px-4 py-3 hover:bg-mist/70 {% if pathname == '/app' %}bg-mist{% endif %}" href="/app">{{ t('nav.dashboard') }}</a>
+          <a class="block rounded-2xl px-4 py-3 hover:bg-mist/70 {% if pathname == '/inbox' %}bg-mist{% endif %}" href="/inbox">{{ t('nav.inbox') }}</a>
+          <a class="block rounded-2xl px-4 py-3 hover:bg-mist/70 {% if pathname == '/settings/preferences' %}bg-mist{% endif %}" href="/settings/preferences">{{ t('nav.preferences') }}</a>
+        {% endif %}
         <a class="block rounded-2xl px-4 py-3 hover:bg-mist/70 {% if pathname == '/settings/profile' %}bg-mist{% endif %}" href="/settings/profile">{{ t('nav.profile') }}</a>
-        <a class="block rounded-2xl px-4 py-3 hover:bg-mist/70 {% if pathname == '/settings/preferences' %}bg-mist{% endif %}" href="/settings/preferences">{{ t('nav.preferences') }}</a>
       </nav>
       <div class="space-y-3 border-t border-ink/10 pt-4">
         {% include "partials/locale-switcher.njk" %}
@@ -27,4 +41,3 @@
     </main>
   </div>
 {% endblock %}
-

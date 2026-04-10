@@ -56,7 +56,7 @@ The current foundation includes:
 - Express + Nunjucks SSR shell
 - Tailwind CSS + screenplay tokens
 - MongoDB/Mongoose models and indexes
-- session, authz, locale, CSRF, and Socket.IO scaffolding
+- session, Google auth, onboarding, locale, CSRF, and Socket.IO collaboration flows
 - Vitest/Supertest/Playwright test foundations
 - Heroku deployment and release-readiness docs
 
@@ -75,4 +75,6 @@ npm run seed
 npm run dev
 ```
 
-For local shell access without full Google OAuth, set `AUTH_BYPASS_ENABLED=true` and use the seeded users shown on `/login`.
+Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CALLBACK_URL` in `.env` to use the real Google sign-in flow locally.
+
+For local shell access without full Google OAuth, set `AUTH_BYPASS_ENABLED=true` and use any existing user shown on `/login`.

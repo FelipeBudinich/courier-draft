@@ -29,6 +29,14 @@
       "openScript": "Abrir guion",
       "openEditor": "Abrir editor",
       "save": "Guardar",
+      "saveProject": "Guardar proyecto",
+      "createProject": "Crear proyecto",
+      "sendInvite": "Enviar invitación",
+      "acceptInvite": "Aceptar invitación",
+      "declineInvite": "Rechazar invitación",
+      "removeMember": "Eliminar miembro",
+      "cancelInvite": "Cancelar invitación",
+      "transferOwnership": "Transferir propiedad",
       "readDocs": "Leer la documentación de arquitectura",
       "switchLocale": "Cambiar idioma"
     },
@@ -38,6 +46,12 @@
       "displayName": "Nombre visible",
       "locale": "Idioma",
       "role": "Rol",
+      "status": "Estado",
+      "invitedBy": "Invitado por",
+      "projectTitle": "Título del proyecto",
+      "searchUsers": "Buscar colaborador",
+      "starterProject": "Proyecto inicial",
+      "transferOwnership": "Transferir propiedad a",
       "updatedAt": "Actualizado",
       "createdAt": "Creado",
       "requestId": "ID de solicitud",
@@ -47,6 +61,12 @@
       "owner": "Propietario",
       "editor": "Editor",
       "reviewer": "Revisor"
+    },
+    "status": {
+      "pending": "Pendiente",
+      "active": "Activo",
+      "declined": "Rechazado",
+      "removed": "Eliminado"
     },
     "empty": {
       "generic": "Todavía no hay contenido aquí.",
@@ -68,11 +88,11 @@
     "login": {
       "title": "Iniciar sesión",
       "heading": "Entra a Courier Draft",
-      "description": "Las rutas de Google OAuth están preparadas y el desarrollo local puede usar el acceso sembrado cuando está habilitado.",
-      "googleCta": "Continuar con Google (base)",
-      "googleDisclaimer": "El intercambio OAuth completo se deja para un épico posterior.",
+      "description": "Inicia sesión con Google para acceder a tus proyectos, invitaciones y actividad reciente.",
+      "googleCta": "Continuar con Google",
+      "googleDisclaimer": "Solo se permiten correos verificados de Google.",
       "devHeading": "Acceso de desarrollo",
-      "devDescription": "Usa un usuario sembrado para que la shell, la autorización y el flujo e2e funcionen antes de implementar el OAuth real.",
+      "devDescription": "Usa un usuario sembrado para las pruebas y el desarrollo local cuando necesites saltar el intercambio real con Google.",
       "submit": "Entrar a la app"
     },
     "oauth": {
@@ -88,18 +108,23 @@
     "dashboard": {
       "title": "Panel",
       "heading": "Panel de trabajo",
-      "description": "Esta shell muestra proyectos sembrados y actividad durable real mientras los flujos de negocio más profundos siguen en modo scaffold."
+      "description": "Revisa tus proyectos, invitaciones pendientes y actividad reciente de colaboración desde un solo lugar.",
+      "emptyState": "Crea un proyecto para empezar a colaborar o termina el onboarding para abrir tu proyecto inicial."
     },
     "inbox": {
       "title": "Bandeja",
-      "heading": "Base de la bandeja",
-      "description": "Las invitaciones y notificaciones crecerán en épicos posteriores. La ruta de fragmento ya existe para swaps sin React."
+      "heading": "Bandeja de invitaciones",
+      "description": "Revisa las invitaciones pendientes y decide en qué proyectos quieres colaborar."
     },
     "settingsProfile": {
       "title": "Perfil",
       "heading": "Configuración de perfil",
-      "description": "Los campos de perfil ya están disponibles a través del endpoint base `/api/v1/me`.",
-      "apiHint": "Usa `PATCH /api/v1/me` para actualizar el perfil de forma durable."
+      "description": "Define cómo te verán tus colaboradores dentro de Courier Draft.",
+      "apiHint": "Los cambios de perfil se guardan mediante la API con sesión.",
+      "onboardingBadge": "Completa tu perfil",
+      "onboardingHeading": "Elige un nombre de usuario para continuar",
+      "onboardingNotice": "Necesitas un nombre de usuario único antes de desbloquear el resto de la app autenticada.",
+      "usernameHelp": "Usa entre 3 y 30 caracteres en minúscula, números o guiones bajos. Debe empezar con una letra y terminar con una letra o un número."
     },
     "settingsPreferences": {
       "title": "Preferencias",
@@ -109,8 +134,8 @@
     },
     "newProject": {
       "title": "Nuevo proyecto",
-      "heading": "Scaffold de creación de proyecto",
-      "description": "La creación durable del proyecto llegará en un épico posterior, pero la entrada SSR ya está lista."
+      "heading": "Crear un proyecto",
+      "description": "Inicia un nuevo espacio de colaboración para tu equipo de escritura."
     },
     "newScript": {
       "title": "Nuevo guion",
@@ -119,11 +144,18 @@
     },
     "projectOverview": {
       "heading": "Resumen del proyecto",
-      "description": "Las superficies principales del espacio de trabajo ya giran alrededor de membresías y guiones reales."
+      "description": "Revisa miembros, actividad reciente y presencia en vivo para este proyecto.",
+      "scriptsPlaceholder": "La autoría de guiones sigue como placeholder en este PR, pero el espacio de trabajo ya soporta onboarding, invitaciones, gestión de miembros e historial de colaboración.",
+      "presenceHeading": "Presencia en vivo",
+      "connecting": "Conectando…",
+      "presenceEmpty": "La presencia aparecerá aquí cuando otros colaboradores entren al room del proyecto."
     },
     "projectMembers": {
       "heading": "Miembros del proyecto",
-      "description": "Membresías y roles actuales del proyecto."
+      "description": "Gestiona colaboradores, invitaciones pendientes y roles del proyecto.",
+      "inviteHeading": "Invitar a un usuario existente",
+      "inviteDescription": "Busca cuentas existentes de Courier Draft por usuario o correo antes de enviar la invitación.",
+      "invitePlaceholder": "Buscar por usuario o correo"
     },
     "projectActivity": {
       "heading": "Actividad del proyecto",
@@ -143,7 +175,8 @@
     },
     "projectSettings": {
       "heading": "Configuración del proyecto",
-      "description": "La configuración solo para propietarios ya está protegida; las mutaciones de negocio llegan después."
+      "description": "Renombra el proyecto o transfiere la propiedad a otro miembro activo.",
+      "transferEmpty": "Agrega otro miembro activo antes de transferir la propiedad."
     },
     "script": {
       "heading": "Resumen del guion",
@@ -193,4 +226,3 @@
     }
   }
 }
-

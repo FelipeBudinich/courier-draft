@@ -6,25 +6,46 @@
   <section class="hero-panel">
     <h2 class="text-4xl text-ink">{{ t('pages.settingsProfile.heading') }}</h2>
     <p class="mt-3 max-w-3xl text-lg leading-8 text-ink/70">{{ t('pages.settingsProfile.description') }}</p>
+    {% if onboarding %}
+      <div class="mt-5 rounded-3xl border border-accent/20 bg-accent/10 px-5 py-4 text-sm text-ink/80">
+        <p class="font-semibold text-ink">{{ t('pages.settingsProfile.onboardingHeading') }}</p>
+        <p class="mt-2">{{ t('pages.settingsProfile.onboardingNotice') }}</p>
+      </div>
+    {% endif %}
   </section>
-  <section class="panel grid gap-4 md:grid-cols-2">
-    <div class="panel-muted">
-      <p class="field-label">{{ t('shared.labels.displayName') }}</p>
-      <p class="text-lg text-ink">{{ user.displayName }}</p>
-    </div>
-    <div class="panel-muted">
-      <p class="field-label">{{ t('shared.labels.username') }}</p>
-      <p class="text-lg text-ink">@{{ user.username }}</p>
-    </div>
-    <div class="panel-muted">
-      <p class="field-label">{{ t('shared.labels.email') }}</p>
-      <p class="text-lg text-ink">{{ user.email }}</p>
-    </div>
-    <div class="panel-muted">
-      <p class="field-label">{{ t('shared.labels.locale') }}</p>
-      <p class="text-lg text-ink">{{ user.preferences.locale or user.locale }}</p>
-    </div>
+  <section class="grid gap-6 lg:grid-cols-[1fr,0.8fr]">
+    <article class="panel">
+      <form class="space-y-4" data-profile-form>
+        <div>
+          <label class="field-label" for="displayName">{{ t('shared.labels.displayName') }}</label>
+          <input class="field-input" id="displayName" name="displayName" type="text" value="{{ user.displayName }}" maxlength="80" />
+        </div>
+        <div>
+          <label class="field-label" for="username">{{ t('shared.labels.username') }}</label>
+          <input class="field-input" id="username" name="username" type="text" value="{{ user.username or '' }}" maxlength="30" placeholder="screenwriter" />
+          <p class="mt-2 text-sm text-ink/55">{{ t('pages.settingsProfile.usernameHelp') }}</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <button class="btn-primary" type="submit">{{ t('shared.buttons.save') }}</button>
+          <span class="text-sm text-ink/55" data-form-status>{{ t('pages.settingsProfile.apiHint') }}</span>
+        </div>
+      </form>
+    </article>
+    <article class="panel space-y-4">
+      <div class="panel-muted">
+        <p class="field-label">{{ t('shared.labels.email') }}</p>
+        <p class="text-lg text-ink">{{ user.email }}</p>
+      </div>
+      <div class="panel-muted">
+        <p class="field-label">{{ t('shared.labels.locale') }}</p>
+        <p class="text-lg text-ink">{{ user.preferences.locale or user.locale }}</p>
+      </div>
+      {% if starterProjectId %}
+        <div class="panel-muted">
+          <p class="field-label">{{ t('shared.labels.starterProject') }}</p>
+          <a class="text-lg text-ink" href="/projects/{{ starterProjectId }}">{{ starterProjectId }}</a>
+        </div>
+      {% endif %}
+    </article>
   </section>
-  <p class="text-sm text-ink/55">{{ t('pages.settingsProfile.apiHint') }}</p>
 {% endblock %}
-

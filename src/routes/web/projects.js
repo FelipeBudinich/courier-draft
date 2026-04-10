@@ -2,13 +2,9 @@ import { Router } from 'express';
 
 import { asyncRoute } from '../../config/errors.js';
 import {
-  ActivityEvent,
-  AuditLog,
   DocumentVersion,
   Note,
   OutlineNode,
-  ProjectEntity,
-  ProjectMember,
   Scene,
   Script
 } from '../../models/index.js';
@@ -18,27 +14,32 @@ import {
   requireProjectRole
 } from '../../middleware/auth.js';
 import { loadScript } from '../../middleware/resources.js';
+import {
+  getProjectActivityReadModel,
+  getProjectAuditReadModel,
+  getProjectMembersReadModel,
+  getProjectWorkspaceReadModel
+} from '../../services/projects/service.js';
 
 const router = Router();
-
-const renderProjectPage = (res, locals) =>
-  res.render('pages/project-page.njk', locals);
 
 router.get(
   '/projects/:projectId',
   requireAuth,
   loadProjectMembership,
   asyncRoute(async (req, res) => {
-    const scripts = await Script.find({ projectId: req.project._id }).sort({ updatedAt: -1 });
-    const members = await ProjectMember.find({ projectId: req.project._id }).populate('userId');
-
-    renderProjectPage(res, {
-      title: req.project.name,
-      headingKey: 'pages.projectOverview.heading',
-      descriptionKey: 'pages.projectOverview.description',
+    const workspace = await getProjectWorkspaceReadModel({
       project: req.project,
-      scripts,
-      members
+      membership: req.projectMembership
+    });
+
+    res.render('pages/projects/workspace.njk', {
+      project: workspace.project,
+      members: workspace.members,
+      memberSummary: workspace.memberSummary,
+      activity: workspace.activity,
+      canManageMembers: workspace.canManageMembers,
+      currentRole: req.projectRole
     });
   })
 );
@@ -48,16 +49,17 @@ router.get(
   requireAuth,
   loadProjectMembership,
   asyncRoute(async (req, res) => {
-    const members = await ProjectMember.find({ projectId: req.project._id })
-      .populate('userId')
-      .sort({ role: 1, createdAt: 1 });
+    const members = await getProjectMembersReadModel({
+      projectId: req.project._id
+    });
 
-    renderProjectPage(res, {
-      title: `${req.project.name} members`,
-      headingKey: 'pages.projectMembers.heading',
-      descriptionKey: 'pages.projectMembers.description',
-      project: req.project,
-      members
+    res.render('pages/projects/members.njk', {
+      project: {
+        id: req.project.publicId,
+        title: req.project.name
+      },
+      members,
+      canManageMembers: req.projectRole === 'owner'
     });
   })
 );
@@ -67,15 +69,15 @@ router.get(
   requireAuth,
   loadProjectMembership,
   asyncRoute(async (req, res) => {
-    const activity = await ActivityEvent.find({ projectId: req.project._id })
-      .sort({ createdAt: -1 })
-      .limit(20);
+    const activity = await getProjectActivityReadModel({
+      projectId: req.project._id
+    });
 
-    renderProjectPage(res, {
-      title: `${req.project.name} activity`,
-      headingKey: 'pages.projectActivity.heading',
-      descriptionKey: 'pages.projectActivity.description',
-      project: req.project,
+    res.render('pages/projects/activity.njk', {
+      project: {
+        id: req.project.publicId,
+        title: req.project.name
+      },
       activity
     });
   })
@@ -87,16 +89,16 @@ router.get(
   loadProjectMembership,
   requireProjectRole('owner'),
   asyncRoute(async (req, res) => {
-    const auditLogs = await AuditLog.find({ projectId: req.project._id })
-      .sort({ createdAt: -1 })
-      .limit(20);
+    const audit = await getProjectAuditReadModel({
+      projectId: req.project._id
+    });
 
-    renderProjectPage(res, {
-      title: `${req.project.name} audit`,
-      headingKey: 'pages.projectAudit.heading',
-      descriptionKey: 'pages.projectAudit.description',
-      project: req.project,
-      auditLogs
+    res.render('pages/projects/audit.njk', {
+      project: {
+        id: req.project.publicId,
+        title: req.project.name
+      },
+      audit
     });
   })
 );
@@ -105,18 +107,11 @@ router.get(
   '/projects/:projectId/characters',
   requireAuth,
   loadProjectMembership,
-  asyncRoute(async (req, res) => {
-    const entities = await ProjectEntity.find({
-      projectId: req.project._id,
-      type: 'character'
-    }).sort({ canonicalName: 1 });
-
-    renderProjectPage(res, {
-      title: `${req.project.name} characters`,
+  asyncRoute(async (_req, res) => {
+    res.render('pages/todo-page.njk', {
+      titleKey: 'pages.projectCharacters.heading',
       headingKey: 'pages.projectCharacters.heading',
-      descriptionKey: 'pages.projectCharacters.description',
-      project: req.project,
-      entities
+      descriptionKey: 'pages.projectCharacters.description'
     });
   })
 );
@@ -125,18 +120,11 @@ router.get(
   '/projects/:projectId/locations',
   requireAuth,
   loadProjectMembership,
-  asyncRoute(async (req, res) => {
-    const entities = await ProjectEntity.find({
-      projectId: req.project._id,
-      type: 'location'
-    }).sort({ canonicalName: 1 });
-
-    renderProjectPage(res, {
-      title: `${req.project.name} locations`,
+  asyncRoute(async (_req, res) => {
+    res.render('pages/todo-page.njk', {
+      titleKey: 'pages.projectLocations.heading',
       headingKey: 'pages.projectLocations.heading',
-      descriptionKey: 'pages.projectLocations.description',
-      project: req.project,
-      entities
+      descriptionKey: 'pages.projectLocations.description'
     });
   })
 );
@@ -147,11 +135,18 @@ router.get(
   loadProjectMembership,
   requireProjectRole('owner'),
   asyncRoute(async (req, res) => {
-    renderProjectPage(res, {
-      title: `${req.project.name} settings`,
-      headingKey: 'pages.projectSettings.heading',
-      descriptionKey: 'pages.projectSettings.description',
-      project: req.project
+    const members = await getProjectMembersReadModel({
+      projectId: req.project._id
+    });
+
+    res.render('pages/projects/settings.njk', {
+      project: {
+        id: req.project.publicId,
+        title: req.project.name
+      },
+      ownershipCandidates: members.filter(
+        (member) => member.status === 'active' && member.role !== 'owner'
+      )
     });
   })
 );

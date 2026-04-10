@@ -1,5 +1,12 @@
-import { forbidden, notFound, unauthorized } from '../config/errors.js';
+import {
+  forbidden,
+  notFound,
+  onboardingRequired,
+  unauthorized
+} from '../config/errors.js';
 import { findProjectMembershipByPublicId } from '../models/lookups.js';
+import { buildOnboardingRedirect } from '../services/auth/return-to.js';
+import { hasCompletedOnboarding } from '../services/auth/service.js';
 
 const roleRank = {
   reviewer: 1,
@@ -30,6 +37,39 @@ const renderFragmentAuthError = (res) =>
     message: 'Sign in to view this fragment.'
   });
 
+const renderFragmentOnboardingError = (res) =>
+  res.status(403).render('pages/fragment-error.njk', {
+    title: 'Profile incomplete',
+    message: 'Choose a username before using this part of the app.'
+  });
+
+const isAllowedDuringOnboarding = (req) => {
+  const pathname = req.path;
+  const method = req.method.toUpperCase();
+
+  if (method === 'POST' && pathname === '/logout') {
+    return true;
+  }
+
+  if (method === 'POST' && pathname === '/locale') {
+    return true;
+  }
+
+  if (method === 'GET' && pathname === '/settings/profile') {
+    return true;
+  }
+
+  if (pathname === '/api/v1/me' && (method === 'GET' || method === 'PATCH')) {
+    return true;
+  }
+
+  if (pathname === '/api/v1/me/preferences' && method === 'PATCH') {
+    return true;
+  }
+
+  return false;
+};
+
 export const requireAuth = (req, res, next) => {
   if (req.currentUser) {
     return next();
@@ -45,6 +85,26 @@ export const requireAuth = (req, res, next) => {
 
   const returnTo = encodeURIComponent(req.originalUrl);
   return res.redirect(`/login?returnTo=${returnTo}`);
+};
+
+export const enforceOnboarding = (req, res, next) => {
+  if (!req.currentUser || hasCompletedOnboarding(req.currentUser)) {
+    return next();
+  }
+
+  if (isAllowedDuringOnboarding(req)) {
+    return next();
+  }
+
+  if (req.originalUrl?.startsWith('/api/v1')) {
+    return next(onboardingRequired());
+  }
+
+  if (req.originalUrl?.startsWith('/fragments')) {
+    return renderFragmentOnboardingError(res);
+  }
+
+  return res.redirect(buildOnboardingRedirect());
 };
 
 export const loadProjectMembership = (req, _res, next) => {

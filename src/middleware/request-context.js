@@ -1,6 +1,7 @@
 import { detectLocale, getAvailableLocales, translate } from '../config/i18n.js';
 import { env } from '../config/env.js';
 import { User } from '../models/index.js';
+import { hasCompletedOnboarding } from '../services/auth/service.js';
 
 export const setSurface = (surface) => (req, _res, next) => {
   req.surface = surface;
@@ -28,6 +29,7 @@ export const loadCurrentUser = (req, res, next) => {
 
       req.currentUser = currentUser;
       res.locals.currentUser = currentUser;
+      res.locals.onboardingRequired = !hasCompletedOnboarding(currentUser);
     })
     .then(() => next())
     .catch(next);
@@ -78,5 +80,7 @@ export const exposeTemplateGlobals = (req, res, next) => {
   res.locals.defaultLayout = req.currentUser
     ? 'layouts/app.njk'
     : 'layouts/public.njk';
+  res.locals.onboardingRequired =
+    req.currentUser ? !hasCompletedOnboarding(req.currentUser) : false;
   next();
 };

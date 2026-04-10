@@ -5,14 +5,23 @@ import { asyncRoute } from '../../../config/errors.js';
 import { supportedLocales } from '../../../config/env.js';
 import { requireAuth } from '../../../middleware/auth.js';
 import { validate } from '../../../middleware/validation.js';
+import {
+  buildAuthBootstrap,
+  getPostSignInRedirect,
+  updateCurrentUserProfile
+} from '../../../services/auth/service.js';
 import { sendApiOk } from './helpers.js';
 
 const router = Router();
 
-const updateProfileSchema = z.object({
-  displayName: z.string().trim().min(2).max(80).optional(),
-  username: z.string().trim().min(3).max(30).regex(/^[a-z0-9_]+$/).optional()
-});
+const updateProfileSchema = z
+  .object({
+    displayName: z.string().trim().min(2).max(80).optional(),
+    username: z.string().trim().min(3).max(30).optional()
+  })
+  .refine((payload) => payload.displayName !== undefined || payload.username !== undefined, {
+    message: 'At least one profile field must be provided.'
+  });
 
 const updatePreferencesSchema = z.object({
   locale: z.enum(supportedLocales).optional()
@@ -22,14 +31,16 @@ router.get(
   '/me',
   requireAuth,
   asyncRoute(async (req, res) => {
+    const bootstrap = await buildAuthBootstrap(req.currentUser);
+
     sendApiOk(res, {
-      user: {
-        id: req.currentUser.publicId,
-        email: req.currentUser.email,
-        username: req.currentUser.username,
-        displayName: req.currentUser.displayName,
-        locale: req.currentUser.preferences.locale || req.currentUser.locale
-      },
+      ...bootstrap,
+      redirectTo: bootstrap.user.onboardingRequired
+        ? null
+        : await getPostSignInRedirect({
+            user: req.currentUser,
+            returnTo: '/app'
+          }),
       csrfToken: res.locals.csrfToken
     });
   })
@@ -40,24 +51,18 @@ router.patch(
   requireAuth,
   validate({ body: updateProfileSchema }),
   asyncRoute(async (req, res) => {
-    if (req.body.displayName !== undefined) {
-      req.currentUser.displayName = req.body.displayName;
-    }
+    const { claimedUsername, redirectTo } = await updateCurrentUserProfile({
+      user: req.currentUser,
+      displayName: req.body.displayName,
+      username: req.body.username
+    });
 
-    if (req.body.username !== undefined) {
-      req.currentUser.username = req.body.username.toLowerCase();
-    }
-
-    await req.currentUser.save();
+    const bootstrap = await buildAuthBootstrap(req.currentUser);
 
     sendApiOk(res, {
-      user: {
-        id: req.currentUser.publicId,
-        email: req.currentUser.email,
-        username: req.currentUser.username,
-        displayName: req.currentUser.displayName,
-        locale: req.currentUser.preferences.locale || req.currentUser.locale
-      }
+      ...bootstrap,
+      claimedUsername,
+      redirectTo
     });
   })
 );
@@ -84,4 +89,3 @@ router.patch(
 );
 
 export default router;
-

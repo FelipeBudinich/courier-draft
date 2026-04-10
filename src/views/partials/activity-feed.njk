@@ -5,6 +5,9 @@
       {% for item in activity %}
         <article class="list-card">
           <p class="font-semibold text-ink">{{ item.message }}</p>
+          {% if item.projectTitle %}
+            <p class="mt-1 text-sm text-ink/60">{{ item.projectTitle }}</p>
+          {% endif %}
           <p class="mt-1 text-xs text-ink/50">{{ formatDate(item.createdAt) }}</p>
         </article>
       {% endfor %}
@@ -13,4 +16,3 @@
     <p class="text-sm text-ink/60">{{ t('fragments.activity.empty') }}</p>
   {% endif %}
 </section>
-

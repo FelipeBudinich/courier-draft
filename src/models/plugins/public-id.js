@@ -7,6 +7,7 @@ export const publicIdPlugin = (schema, { prefix }) => {
   schema.add({
     publicId: {
       type: String,
+      default: () => generatePublicId(prefix),
       required: true,
       unique: true,
       index: true
@@ -21,4 +22,3 @@ export const publicIdPlugin = (schema, { prefix }) => {
     next();
   });
 };
-

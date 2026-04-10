@@ -29,6 +29,14 @@
       "openScript": "脚本を開く",
       "openEditor": "エディターシェルを開く",
       "save": "保存",
+      "saveProject": "プロジェクトを保存",
+      "createProject": "プロジェクトを作成",
+      "sendInvite": "招待を送信",
+      "acceptInvite": "招待を承諾",
+      "declineInvite": "招待を辞退",
+      "removeMember": "メンバーを削除",
+      "cancelInvite": "招待を取り消す",
+      "transferOwnership": "所有権を移譲",
       "readDocs": "アーキテクチャ資料を読む",
       "switchLocale": "言語を切り替える"
     },
@@ -38,6 +46,12 @@
       "displayName": "表示名",
       "locale": "言語",
       "role": "役割",
+      "status": "状態",
+      "invitedBy": "招待者",
+      "projectTitle": "プロジェクト名",
+      "searchUsers": "共同作業者を検索",
+      "starterProject": "スタータープロジェクト",
+      "transferOwnership": "所有権の移譲先",
       "updatedAt": "更新日",
       "createdAt": "作成日",
       "requestId": "リクエスト ID",
@@ -47,6 +61,12 @@
       "owner": "オーナー",
       "editor": "編集者",
       "reviewer": "レビュアー"
+    },
+    "status": {
+      "pending": "保留中",
+      "active": "有効",
+      "declined": "辞退",
+      "removed": "削除済み"
     },
     "empty": {
       "generic": "まだ内容がありません。",
@@ -68,11 +88,11 @@
     "login": {
       "title": "サインイン",
       "heading": "Courier Draft にサインイン",
-      "description": "Google OAuth のルートは足場ができており、ローカル開発では有効時にシード済みバイパスを利用できます。",
-      "googleCta": "Google で続行（足場のみ）",
-      "googleDisclaimer": "完全な OAuth フローは後続エピックに意図的に残しています。",
+      "description": "Google でサインインして、プロジェクト、招待、最近の共同作業履歴にアクセスします。",
+      "googleCta": "Google で続行",
+      "googleDisclaimer": "Google の確認済みメールアドレスのみ利用できます。",
       "devHeading": "開発用サインイン",
-      "devDescription": "シード済みユーザーを使うことで、本番 OAuth 実装前でもアプリシェル、認可、e2e フローを確認できます。",
+      "devDescription": "テストやローカル開発では、必要に応じてシード済みユーザーで Google 連携をスキップできます。",
       "submit": "アプリに入る"
     },
     "oauth": {
@@ -88,18 +108,23 @@
     "dashboard": {
       "title": "ダッシュボード",
       "heading": "ワークスペース ダッシュボード",
-      "description": "このシェルでは、より深い業務フローが後続エピックに残っていても、シード済みプロジェクトと永続的なアクティビティを確認できます。"
+      "description": "プロジェクト、保留中の招待、最近の共同作業アクティビティをひとつの画面で確認できます。",
+      "emptyState": "共同作業を始めるにはプロジェクトを作成するか、オンボーディングを完了してスタータープロジェクトを開いてください。"
     },
     "inbox": {
       "title": "受信箱",
-      "heading": "受信箱の基盤",
-      "description": "招待と通知の仕組みは後続エピックで拡張されます。React を使わない差し替え用フラグメントルートはすでにあります。"
+      "heading": "招待受信箱",
+      "description": "保留中のプロジェクト招待を確認し、どこで共同作業するかを決めましょう。"
     },
     "settingsProfile": {
       "title": "プロフィール",
       "heading": "プロフィール設定",
-      "description": "プロフィール項目は `/api/v1/me` の基盤エンドポイントですでに利用できます。",
-      "apiHint": "永続的なプロフィール更新には `PATCH /api/v1/me` を使います。"
+      "description": "Courier Draft 上で共同作業者に表示されるプロフィールを設定します。",
+      "apiHint": "プロフィール変更はセッション付き API から保存されます。",
+      "onboardingBadge": "プロフィールを完了",
+      "onboardingHeading": "続行するにはユーザー名を決めてください",
+      "onboardingNotice": "認証済みアプリの残りの機能を使う前に、一意のユーザー名が必要です。",
+      "usernameHelp": "3〜30 文字の小文字、数字、アンダースコアを使えます。先頭は英字、末尾は英字または数字にしてください。"
     },
     "settingsPreferences": {
       "title": "設定",
@@ -109,8 +134,8 @@
     },
     "newProject": {
       "title": "新しいプロジェクト",
-      "heading": "プロジェクト作成の足場",
-      "description": "永続的なプロジェクト作成は後続エピックですが、SSR の入口ページはすでに用意されています。"
+      "heading": "プロジェクトを作成",
+      "description": "執筆チーム向けの新しい共同作業スペースを開始します。"
     },
     "newScript": {
       "title": "新しい脚本",
@@ -119,11 +144,18 @@
     },
     "projectOverview": {
       "heading": "プロジェクト概要",
-      "description": "ワークスペースの主要面は、実際のプロジェクトメンバーシップと脚本レコードの上に配線されています。"
+      "description": "このプロジェクトのメンバー、最近の活動、ライブプレゼンスを確認できます。",
+      "scriptsPlaceholder": "脚本執筆はこの PR では引き続きプレースホルダーですが、ワークスペース自体はオンボーディング、招待、メンバー管理、共同作業履歴に対応しています。",
+      "presenceHeading": "ライブプレゼンス",
+      "connecting": "接続中…",
+      "presenceEmpty": "共同作業者がプロジェクトルームに参加すると、ここに表示されます。"
     },
     "projectMembers": {
       "heading": "プロジェクトメンバー",
-      "description": "このプロジェクトの現在のメンバーと役割です。"
+      "description": "共同作業者、保留中の招待、プロジェクト内の役割を管理します。",
+      "inviteHeading": "既存ユーザーを招待",
+      "inviteDescription": "招待を送る前に、既存の Courier Draft アカウントをユーザー名またはメールで検索します。",
+      "invitePlaceholder": "ユーザー名またはメールで検索"
     },
     "projectActivity": {
       "heading": "プロジェクト アクティビティ",
@@ -143,7 +175,8 @@
     },
     "projectSettings": {
       "heading": "プロジェクト設定",
-      "description": "オーナー専用設定はすでに保護されており、業務ロジックの更新は後続エピックへ残しています。"
+      "description": "プロジェクト名を変更するか、別の有効メンバーへ所有権を移譲します。",
+      "transferEmpty": "所有権を移譲する前に、別の有効メンバーを追加してください。"
     },
     "script": {
       "heading": "脚本概要",
@@ -193,4 +226,3 @@
     }
   }
 }
-

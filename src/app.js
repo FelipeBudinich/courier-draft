@@ -14,6 +14,7 @@ import {
   loadCurrentUser,
   loadLocale
 } from './middleware/request-context.js';
+import { enforceOnboarding } from './middleware/auth.js';
 import { createHttpLogger } from './config/logger.js';
 import { env } from './config/env.js';
 import { createSessionMiddleware } from './config/session.js';
@@ -72,6 +73,7 @@ export const createApp = ({ sessionStore, disableRateLimit = false } = {}) => {
   app.use(csrfProtection);
 
   app.use(opsRouter);
+  app.use(enforceOnboarding);
   app.use('/fragments', fragmentsRouter);
   app.use('/api/v1', apiRouter);
   app.use(webRouter);
@@ -83,4 +85,3 @@ export const createApp = ({ sessionStore, disableRateLimit = false } = {}) => {
     sessionMiddleware
   };
 };
-

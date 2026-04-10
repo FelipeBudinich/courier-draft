@@ -71,11 +71,11 @@ describe('role middleware and placeholder APIs', () => {
     await loginAsUser(stack.request, seedFixtures.users.owner.email);
 
     const response = await stack.request.get(
-      `/api/v1/projects/${seedFixtures.project.publicId}`
+      `/api/v1/projects/${seedFixtures.project.publicId}/scripts`
     );
 
     expect(response.status).toBe(501);
     expect(response.body.error.code).toBe('NOT_IMPLEMENTED');
-    expect(response.body.error.details.route).toBe('/projects/:projectId');
+    expect(response.body.error.details.route).toBe('/projects/:projectId/scripts');
   });
 });

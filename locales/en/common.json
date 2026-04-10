@@ -29,6 +29,14 @@
       "openScript": "Open script",
       "openEditor": "Open editor shell",
       "save": "Save",
+      "saveProject": "Save project",
+      "createProject": "Create project",
+      "sendInvite": "Send invite",
+      "acceptInvite": "Accept invite",
+      "declineInvite": "Decline invite",
+      "removeMember": "Remove member",
+      "cancelInvite": "Cancel invite",
+      "transferOwnership": "Transfer ownership",
       "readDocs": "Read the architecture docs",
       "switchLocale": "Switch locale"
     },
@@ -38,6 +46,12 @@
       "displayName": "Display name",
       "locale": "Locale",
       "role": "Role",
+      "status": "Status",
+      "invitedBy": "Invited by",
+      "projectTitle": "Project title",
+      "searchUsers": "Find a teammate",
+      "starterProject": "Starter project",
+      "transferOwnership": "Transfer ownership to",
       "updatedAt": "Updated",
       "createdAt": "Created",
       "requestId": "Request ID",
@@ -47,6 +61,12 @@
       "owner": "Owner",
       "editor": "Editor",
       "reviewer": "Reviewer"
+    },
+    "status": {
+      "pending": "Pending",
+      "active": "Active",
+      "declined": "Declined",
+      "removed": "Removed"
     },
     "empty": {
       "generic": "Nothing has landed here yet.",
@@ -68,11 +88,11 @@
     "login": {
       "title": "Sign in",
       "heading": "Sign in to Courier Draft",
-      "description": "Google OAuth routes are scaffolded, and local development can use the seeded bypass when it is enabled.",
-      "googleCta": "Continue with Google (scaffold)",
-      "googleDisclaimer": "The full OAuth exchange is intentionally deferred to a later epic.",
+      "description": "Sign in with Google to access your projects, collaborator invites, and activity feed.",
+      "googleCta": "Continue with Google",
+      "googleDisclaimer": "Only verified Google email addresses can sign in.",
       "devHeading": "Development sign-in",
-      "devDescription": "Use a seeded local user so the app shell, authz, and e2e flow can run before the real OAuth implementation lands.",
+      "devDescription": "Use a seeded local user so tests and local development can bypass the Google exchange when needed.",
       "submit": "Enter the app"
     },
     "oauth": {
@@ -88,18 +108,23 @@
     "dashboard": {
       "title": "Dashboard",
       "heading": "Workspace dashboard",
-      "description": "This shell shows real seeded projects and durable activity while the deeper business flows are still scaffolded."
+      "description": "Review your projects, pending invites, and recent collaboration activity from one place.",
+      "emptyState": "Create a project to start collaborating, or finish onboarding and open your starter project."
     },
     "inbox": {
       "title": "Inbox",
-      "heading": "Inbox foundation",
-      "description": "Invite and notification plumbing will expand in later epics. The fragment route already exists for no-React swaps."
+      "heading": "Invite inbox",
+      "description": "Review pending project invitations and decide where you want to collaborate next."
     },
     "settingsProfile": {
       "title": "Profile",
       "heading": "Profile settings",
-      "description": "Profile fields are available now through the `/api/v1/me` foundation endpoint.",
-      "apiHint": "Use `PATCH /api/v1/me` for durable profile updates."
+      "description": "Choose how collaborators will see you across Courier Draft.",
+      "apiHint": "Profile changes save through the session-backed API.",
+      "onboardingBadge": "Finish profile",
+      "onboardingHeading": "Choose a username to continue",
+      "onboardingNotice": "You need a unique username before the rest of the authenticated app unlocks.",
+      "usernameHelp": "Use 3-30 lowercase letters, numbers, or underscores. Usernames must start with a letter and end with a letter or number."
     },
     "settingsPreferences": {
       "title": "Preferences",
@@ -109,8 +134,8 @@
     },
     "newProject": {
       "title": "New project",
-      "heading": "Project creation scaffold",
-      "description": "The durable create-project flow belongs to a later business epic, but the SSR entry page is ready now."
+      "heading": "Create a project",
+      "description": "Start a new collaboration space for your writing team."
     },
     "newScript": {
       "title": "New script",
@@ -119,11 +144,18 @@
     },
     "projectOverview": {
       "heading": "Project overview",
-      "description": "Core workspace surfaces are wired around real project membership and script records."
+      "description": "Review members, recent activity, and collaboration presence for this project.",
+      "scriptsPlaceholder": "Script authoring stays stubbed in this PR, but the workspace is ready for onboarding, invites, member management, and collaboration history.",
+      "presenceHeading": "Live presence",
+      "connecting": "Connecting…",
+      "presenceEmpty": "Presence will appear here once collaborators join the project room."
     },
     "projectMembers": {
       "heading": "Project members",
-      "description": "Current membership and roles for this project."
+      "description": "Manage collaborators, pending invites, and project roles.",
+      "inviteHeading": "Invite an existing user",
+      "inviteDescription": "Search existing Courier Draft accounts by username or email before sending the invite.",
+      "invitePlaceholder": "Search by username or email"
     },
     "projectActivity": {
       "heading": "Project activity",
@@ -143,7 +175,8 @@
     },
     "projectSettings": {
       "heading": "Project settings",
-      "description": "Owner-only settings are routed and protected now, with business mutations deferred to later epics."
+      "description": "Rename the project or transfer ownership to another active member.",
+      "transferEmpty": "Add another active member before transferring ownership."
     },
     "script": {
       "heading": "Script overview",
@@ -193,4 +226,3 @@
     }
   }
 }
-

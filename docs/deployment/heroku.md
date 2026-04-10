@@ -24,7 +24,9 @@ Set these in Heroku config vars:
 - `RATE_LIMIT_MAX=300`
 - `LOG_LEVEL=info`
 - `AUTH_BYPASS_ENABLED=false`
-- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL` when the real OAuth epic lands
+- `GOOGLE_CLIENT_ID=<Google OAuth client id>`
+- `GOOGLE_CLIENT_SECRET=<Google OAuth client secret>`
+- `GOOGLE_CALLBACK_URL=https://<your-heroku-app>.herokuapp.com/auth/google/callback`
 
 ## MongoDB Atlas
 
@@ -53,7 +55,7 @@ Set these in Heroku config vars:
 - `GET /healthz` returns `200`
 - `GET /readyz` returns `200`
 - `/login` renders
+- Google sign-in completes with a verified Google account
 - locale switching updates the locale cookie
 - `/app` loads after authentication
 - `/collab` rejects unauthenticated sockets
-

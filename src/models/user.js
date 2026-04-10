@@ -15,8 +15,8 @@ const userSchema = new Schema(
     },
     username: {
       type: String,
-      required: true,
       unique: true,
+      sparse: true,
       lowercase: true,
       trim: true
     },
@@ -31,6 +31,11 @@ const userSchema = new Schema(
       required: true,
       trim: true
     },
+    avatarUrl: {
+      type: String,
+      default: '',
+      trim: true
+    },
     locale: {
       type: String,
       default: 'en'
@@ -40,6 +45,15 @@ const userSchema = new Schema(
         type: String,
         default: 'en'
       }
+    },
+    starterProjectId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Project',
+      default: null
+    },
+    lastSeenAt: {
+      type: Date,
+      default: null
     },
     isActive: {
       type: Boolean,
@@ -55,4 +69,3 @@ const userSchema = new Schema(
 userSchema.plugin(publicIdPlugin, { prefix: 'usr' });
 
 export const User = mongoose.models.User ?? mongoose.model('User', userSchema);
-

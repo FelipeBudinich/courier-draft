@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 
 import session from 'express-session';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import supertest from 'supertest';
 
 import { createApp } from '../../src/app.js';
@@ -20,11 +20,17 @@ export const extractCsrfToken = (html) => {
 
 export const startTestStack = async ({ seed = true } = {}) => {
   const mongoPort = Math.floor(35_000 + Math.random() * 20_000);
-  const mongoServer = await MongoMemoryServer.create({
-    instance: {
-      ip: '127.0.0.1',
-      port: mongoPort
-    }
+  const mongoServer = await MongoMemoryReplSet.create({
+    replSet: {
+      count: 1,
+      storageEngine: 'wiredTiger'
+    },
+    instanceOpts: [
+      {
+        ip: '127.0.0.1',
+        port: mongoPort
+      }
+    ]
   });
   const mongoUri = mongoServer.getUri();
   await connectToMongo(mongoUri);

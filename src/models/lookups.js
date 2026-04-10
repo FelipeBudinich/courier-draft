@@ -11,11 +11,23 @@ export const findProjectMembershipByPublicId = async ({
 
   const membership = await ProjectMember.findOne({
     projectId: project._id,
-    userId
+    userId,
+    status: 'active'
   });
 
   return { project, membership };
 };
+
+export const findProjectByPublicId = ({ projectPublicId }) =>
+  Project.findOne({
+    publicId: projectPublicId
+  });
+
+export const findProjectMemberByPublicId = ({ projectId, memberPublicId }) =>
+  ProjectMember.findOne({
+    projectId,
+    publicId: memberPublicId
+  });
 
 export const findScriptByPublicId = ({ projectId, scriptPublicId }) =>
   Script.findOne({
@@ -35,4 +47,3 @@ export const findNoteByPublicId = ({ projectId, notePublicId }) =>
     projectId,
     publicId: notePublicId
   });
-

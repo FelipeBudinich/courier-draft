@@ -2,16 +2,19 @@ import { Router } from 'express';
 
 import { asyncRoute } from '../../config/errors.js';
 import {
-  ActivityEvent,
   DocumentVersion,
   Note,
   OutlineNode,
-  ProjectMember,
   Scene
 } from '../../models/index.js';
 import { loadProjectMembership, requireAuth } from '../../middleware/auth.js';
 import { loadScript } from '../../middleware/resources.js';
 import { setSurface } from '../../middleware/request-context.js';
+import { listPendingInvitesForUser } from '../../services/invites/service.js';
+import {
+  getProjectActivityReadModel,
+  getProjectMembersReadModel
+} from '../../services/projects/service.js';
 import { renderFragment } from './helpers.js';
 
 const router = Router();
@@ -21,9 +24,13 @@ router.use(setSurface('fragment'));
 router.get(
   '/inbox/invites',
   requireAuth,
-  asyncRoute(async (_req, res) => {
+  asyncRoute(async (req, res) => {
+    const invites = await listPendingInvitesForUser({
+      userId: req.currentUser._id
+    });
+
     renderFragment(res, 'partials/invites-list.njk', {
-      invites: []
+      invites
     });
   })
 );
@@ -33,9 +40,10 @@ router.get(
   requireAuth,
   loadProjectMembership,
   asyncRoute(async (req, res) => {
-    const activity = await ActivityEvent.find({ projectId: req.project._id })
-      .sort({ createdAt: -1 })
-      .limit(10);
+    const activity = await getProjectActivityReadModel({
+      projectId: req.project._id,
+      limit: 10
+    });
 
     renderFragment(res, 'partials/activity-feed.njk', { activity });
   })
@@ -46,11 +54,15 @@ router.get(
   requireAuth,
   loadProjectMembership,
   asyncRoute(async (req, res) => {
-    const members = await ProjectMember.find({ projectId: req.project._id })
-      .populate('userId')
-      .sort({ role: 1, createdAt: 1 });
+    const members = await getProjectMembersReadModel({
+      projectId: req.project._id
+    });
 
-    renderFragment(res, 'partials/members-list.njk', { members });
+    renderFragment(res, 'partials/members-list.njk', {
+      members,
+      projectId: req.project.publicId,
+      canManageMembers: req.projectRole === 'owner'
+    });
   })
 );
 
@@ -97,4 +109,3 @@ router.get(
 );
 
 export default router;
-

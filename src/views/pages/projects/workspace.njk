@@ -1,0 +1,42 @@
+{% extends "layouts/app.njk" %}
+
+{% block title %}{{ project.title }} · {{ t('meta.appName') }}{% endblock %}
+
+{% block content %}
+  <section class="hero-panel">
+    <div class="flex flex-wrap items-center gap-3">
+      <span class="badge">{{ t('shared.badges.' + currentRole) }}</span>
+      <span class="badge">{{ memberSummary.byStatus.active }} {{ t('sections.members') | lower }}</span>
+      <span class="badge">{{ memberSummary.byStatus.pending }} pending</span>
+    </div>
+    <h2 class="mt-4 text-4xl text-ink">{{ project.title }}</h2>
+    <p class="mt-3 max-w-3xl text-lg leading-8 text-ink/70">{{ t('pages.projectOverview.description') }}</p>
+    <div class="mt-5 flex flex-wrap gap-3">
+      <a class="btn-secondary" href="/projects/{{ project.id }}/members">{{ t('sections.members') }}</a>
+      <a class="btn-secondary" href="/projects/{{ project.id }}/activity">{{ t('sections.activity') }}</a>
+      {% if canManageMembers %}
+        <a class="btn-secondary" href="/projects/{{ project.id }}/settings">{{ t('pages.projectSettings.heading') }}</a>
+      {% endif %}
+    </div>
+  </section>
+  <section class="grid gap-6 xl:grid-cols-[1.15fr,0.85fr]">
+    <article class="panel space-y-4">
+      <div class="flex items-center justify-between gap-3">
+        <h3 class="text-2xl text-ink">{{ t('sections.scripts') }}</h3>
+        <span class="badge">{{ t('pages.todo.heading') }}</span>
+      </div>
+      <p class="text-sm leading-7 text-ink/70">{{ t('pages.projectOverview.scriptsPlaceholder') }}</p>
+    </article>
+    <article class="panel space-y-4">
+      <div class="flex items-center justify-between gap-3">
+        <h3 class="text-2xl text-ink">{{ t('pages.projectOverview.presenceHeading') }}</h3>
+        <span class="text-sm text-ink/55" data-project-connection-state>{{ t('pages.projectOverview.connecting') }}</span>
+      </div>
+      <div data-project-presence data-project-id="{{ project.id }}">
+        <p class="text-sm text-ink/60" data-presence-summary>{{ t('pages.projectOverview.presenceEmpty') }}</p>
+        <div class="space-y-3" data-presence-list></div>
+      </div>
+    </article>
+  </section>
+  {% include "partials/activity-feed.njk" %}
+{% endblock %}

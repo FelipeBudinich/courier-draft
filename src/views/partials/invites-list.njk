@@ -1,11 +1,39 @@
 <section class="panel space-y-3">
-  <h2 class="text-xl text-ink">{{ t('fragments.invites.heading') }}</h2>
+  <div class="flex items-center justify-between gap-3">
+    <h2 class="text-xl text-ink">{{ t('fragments.invites.heading') }}</h2>
+    <span class="badge">{{ invites.length }}</span>
+  </div>
   {% if invites.length %}
-    {% for invite in invites %}
-      <div class="list-card">{{ invite }}</div>
-    {% endfor %}
+    <div class="space-y-3">
+      {% for invite in invites %}
+        <article class="list-card space-y-3">
+          <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p class="font-semibold text-ink">{{ invite.project.title }}</p>
+              <p class="text-sm text-ink/60">
+                {{ t('shared.labels.role') }}: {{ t('shared.badges.' + invite.role) }}
+                {% if invite.invitedBy %}
+                  · {{ t('shared.labels.invitedBy') }}: {{ invite.invitedBy.displayName }}
+                {% endif %}
+              </p>
+            </div>
+            <span class="badge">{{ t('shared.status.' + invite.status) }}</span>
+          </div>
+          <p class="text-xs text-ink/50">{{ formatDate(invite.invitedAt) }}</p>
+          {% if canRespond is not defined or canRespond %}
+            <div class="flex flex-wrap gap-3">
+              <form data-invite-action-form action="/api/v1/invites/{{ invite.id }}/accept" method="post">
+                <button class="btn-primary" type="submit">{{ t('shared.buttons.acceptInvite') }}</button>
+              </form>
+              <form data-invite-action-form action="/api/v1/invites/{{ invite.id }}/decline" method="post">
+                <button class="btn-secondary" type="submit">{{ t('shared.buttons.declineInvite') }}</button>
+              </form>
+            </div>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </div>
   {% else %}
     <p class="text-sm text-ink/60">{{ t('fragments.invites.empty') }}</p>
   {% endif %}
 </section>
-

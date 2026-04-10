@@ -28,8 +28,7 @@
 
 ## Release-readiness notes
 
-- Durable business logic for many routes is intentionally still placeholder `501` behavior.
-- Google OAuth remains scaffold-only in this PR.
+- Durable business logic for script, outline, scene, note, entity, metrics, and export routes intentionally remains placeholder `501` behavior.
+- Google OAuth requires verified Google emails and configured callback credentials in each environment.
 - Yjs sync events validate payloads but remain intentionally unimplemented.
 - Multi-dyno Socket.IO support is deferred until later realtime epics.
-

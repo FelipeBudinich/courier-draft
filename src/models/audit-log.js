@@ -9,7 +9,13 @@ const auditLogSchema = new Schema(
     projectId: {
       type: Schema.Types.ObjectId,
       ref: 'Project',
-      required: true,
+      default: null,
+      index: true
+    },
+    scope: {
+      type: String,
+      enum: ['account', 'project'],
+      default: 'project',
       index: true
     },
     actorId: {
@@ -42,8 +48,8 @@ const auditLogSchema = new Schema(
 );
 
 auditLogSchema.plugin(publicIdPlugin, { prefix: 'aud' });
-auditLogSchema.index({ projectId: 1, createdAt: -1 });
+auditLogSchema.index({ scope: 1, projectId: 1, createdAt: -1 });
+auditLogSchema.index({ actorId: 1, createdAt: -1 });
 
 export const AuditLog =
   mongoose.models.AuditLog ?? mongoose.model('AuditLog', auditLogSchema);
-

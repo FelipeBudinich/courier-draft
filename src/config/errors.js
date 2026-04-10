@@ -18,11 +18,19 @@ export class AppError extends Error {
 export const badRequest = (message, details) =>
   new AppError({ statusCode: 400, code: 'INVALID_PAYLOAD', message, details });
 
+export const conflict = (message = 'That resource already exists or is already in use.') =>
+  new AppError({ statusCode: 409, code: 'CONFLICT', message });
+
 export const unauthorized = (message = 'You must sign in to continue.') =>
   new AppError({ statusCode: 401, code: 'AUTH_REQUIRED', message });
 
 export const forbidden = (message = 'You do not have access to this resource.') =>
   new AppError({ statusCode: 403, code: 'FORBIDDEN', message });
+
+export const onboardingRequired = (
+  message = 'Complete your profile before accessing the app.'
+) =>
+  new AppError({ statusCode: 403, code: 'ONBOARDING_REQUIRED', message });
 
 export const notFound = (message = 'The requested resource was not found.') =>
   new AppError({ statusCode: 404, code: 'NOT_FOUND', message });
@@ -58,4 +66,3 @@ export const asyncRoute = (handler) => async (req, res, next) => {
     next(error);
   }
 };
-

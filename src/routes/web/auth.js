@@ -7,7 +7,13 @@ import { seedFixtures } from '../../models/seed.js';
 import { User } from '../../models/index.js';
 import { setFlash } from '../../middleware/request-context.js';
 import { validate } from '../../middleware/validation.js';
-import { renderTodoPage } from './helpers.js';
+import {
+  beginGoogleAuthFlow,
+  completeGoogleAuthFlow,
+  getPostSignInRedirect
+} from '../../services/auth/service.js';
+import { sanitizeReturnTo } from '../../services/auth/return-to.js';
+import { attachUserSession, destroyUserSession } from '../../services/auth/session.js';
 
 const router = Router();
 
@@ -16,16 +22,30 @@ const devLoginSchema = z.object({
   returnTo: z.string().optional().default('/app')
 });
 
+const saveSession = (req) =>
+  new Promise((resolve) => {
+    req.session.save(resolve);
+  });
+
 router.get(
   '/login',
   asyncRoute(async (req, res) => {
     if (req.currentUser) {
-      return res.redirect('/app');
+      return res.redirect(
+        await getPostSignInRedirect({
+          user: req.currentUser,
+          returnTo: req.query.returnTo ?? '/app'
+        })
+      );
     }
 
+    const users = env.authBypassEnabled
+      ? await User.find({}).sort({ email: 1 }).select('email displayName')
+      : Object.values(seedFixtures.users);
+
     res.render('pages/login.njk', {
-      returnTo: req.query.returnTo ?? '/app',
-      seededUsers: Object.values(seedFixtures.users),
+      returnTo: sanitizeReturnTo(req.query.returnTo, '/app'),
+      seededUsers: users,
       authBypassEnabled: env.authBypassEnabled
     });
   })
@@ -33,31 +53,51 @@ router.get(
 
 router.get(
   '/auth/google',
-  asyncRoute(async (_req, res) => {
-    renderTodoPage(
-      res,
-      {
-        titleKey: 'pages.oauth.title',
-        headingKey: 'pages.oauth.heading',
-        descriptionKey: 'pages.oauth.description'
-      },
-      501
-    );
+  asyncRoute(async (req, res) => {
+    const redirectUrl = beginGoogleAuthFlow({
+      req,
+      returnTo: req.query.returnTo ?? '/app'
+    });
+
+    await saveSession(req);
+    res.redirect(redirectUrl);
   })
 );
 
 router.get(
   '/auth/google/callback',
-  asyncRoute(async (_req, res) => {
-    renderTodoPage(
-      res,
-      {
-        titleKey: 'pages.oauthCallback.title',
-        headingKey: 'pages.oauthCallback.heading',
-        descriptionKey: 'pages.oauthCallback.description'
-      },
-      501
-    );
+  asyncRoute(async (req, res) => {
+    if (req.query.error) {
+      setFlash(req, {
+        type: 'error',
+        message: 'Google sign-in was cancelled or could not be completed.'
+      });
+      return res.redirect('/login');
+    }
+
+    try {
+      const { user, returnTo } = await completeGoogleAuthFlow({
+        req,
+        code: req.query.code,
+        state: req.query.state
+      });
+
+      attachUserSession(req, user);
+      await saveSession(req);
+
+      res.redirect(
+        await getPostSignInRedirect({
+          user,
+          returnTo
+        })
+      );
+    } catch (error) {
+      setFlash(req, {
+        type: 'error',
+        message: error.message
+      });
+      res.redirect('/login');
+    }
   })
 );
 
@@ -78,24 +118,26 @@ router.post(
       return res.redirect('/login');
     }
 
-    req.session.user = {
-      id: String(user._id),
-      publicId: user.publicId
-    };
+    user.lastSeenAt = new Date();
+    await user.save();
 
-    req.session.save(() => {
-      res.redirect(req.body.returnTo || '/app');
-    });
+    attachUserSession(req, user);
+    await saveSession(req);
+
+    res.redirect(
+      await getPostSignInRedirect({
+        user,
+        returnTo: req.body.returnTo
+      })
+    );
   })
 );
 
 router.post(
   '/logout',
   asyncRoute(async (req, res) => {
-    req.session.destroy(() => {
-      res.clearCookie(env.sessionName);
-      res.redirect('/login');
-    });
+    await destroyUserSession(req, res);
+    res.redirect('/login');
   })
 );
 

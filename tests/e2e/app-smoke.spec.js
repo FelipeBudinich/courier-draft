@@ -1,14 +1,49 @@
 import { test, expect } from '@playwright/test';
 
-test('login page to app shell with locale switching', async ({ page }) => {
+const loginAs = async (page, email) => {
   await page.goto('/login');
-  await page.selectOption('select[name="email"]', 'owner@courier.test');
-  await page.getByRole('button', { name: 'Enter the app' }).click();
+  await page.selectOption('select[name="email"]', email);
+  await page.getByRole('button', { name: /enter the app/i }).click();
+};
+
+test('owner can create a project from the dashboard', async ({ page }) => {
+  await loginAs(page, 'owner@courier.test');
 
   await expect(page).toHaveURL(/\/app$/);
-  await expect(page.getByRole('heading', { name: 'Workspace dashboard' })).toBeVisible();
+  await page.getByRole('link', { name: /new project/i }).click();
+  await expect(page).toHaveURL(/\/projects\/new$/);
 
-  await page.selectOption('#locale-switcher', 'es');
-  await expect(page.getByRole('link', { name: 'Panel' })).toBeVisible();
+  await page.getByLabel('Project title').fill('Playwright Project');
+  await page.getByRole('button', { name: /create project/i }).click();
+
+  await expect(page).toHaveURL(/\/projects\/prj_/);
+  await expect(page.getByRole('heading', { name: 'Playwright Project' })).toBeVisible();
 });
 
+test('pending invitee can accept an invite and see the project on the dashboard', async ({
+  page
+}) => {
+  await loginAs(page, 'pending@courier.test');
+
+  await expect(page).toHaveURL(/\/app$/);
+  const invitesSection = page.locator('section').filter({
+    has: page.getByRole('heading', { name: /invites/i })
+  });
+  await expect(invitesSection.getByText('Courier Pilot')).toBeVisible();
+  await page.getByRole('button', { name: /accept invite/i }).click();
+
+  await expect(page.locator('a[href="/projects/prj_foundation_demo"]')).toBeVisible();
+});
+
+test('onboarding redirects to profile settings and lands on the starter project after username claim', async ({
+  page
+}) => {
+  await loginAs(page, 'onboard@courier.test');
+
+  await expect(page).toHaveURL(/\/settings\/profile\?onboarding=1$/);
+  await page.getByLabel('Username').fill('playwright_onboard');
+  await page.getByRole('button', { name: /^save$/i }).click();
+
+  await expect(page).toHaveURL(/\/projects\/prj_/);
+  await expect(page.getByRole('heading', { name: 'Onboarding Starter' })).toBeVisible();
+});

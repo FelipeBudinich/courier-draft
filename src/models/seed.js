@@ -74,8 +74,10 @@ export const seedDevelopmentData = async () => {
         email: seedFixtures.users.owner.email,
         username: seedFixtures.users.owner.username,
         displayName: seedFixtures.users.owner.displayName,
+        avatarUrl: '',
         locale: seedFixtures.users.owner.locale,
-        preferences: { locale: seedFixtures.users.owner.locale }
+        preferences: { locale: seedFixtures.users.owner.locale },
+        lastSeenAt: new Date()
       }
     },
     { upsert: true, new: true, setDefaultsOnInsert: true }
@@ -89,8 +91,10 @@ export const seedDevelopmentData = async () => {
         email: seedFixtures.users.editor.email,
         username: seedFixtures.users.editor.username,
         displayName: seedFixtures.users.editor.displayName,
+        avatarUrl: '',
         locale: seedFixtures.users.editor.locale,
-        preferences: { locale: seedFixtures.users.editor.locale }
+        preferences: { locale: seedFixtures.users.editor.locale },
+        lastSeenAt: new Date()
       }
     },
     { upsert: true, new: true, setDefaultsOnInsert: true }
@@ -104,8 +108,10 @@ export const seedDevelopmentData = async () => {
         email: seedFixtures.users.reviewer.email,
         username: seedFixtures.users.reviewer.username,
         displayName: seedFixtures.users.reviewer.displayName,
+        avatarUrl: '',
         locale: seedFixtures.users.reviewer.locale,
-        preferences: { locale: seedFixtures.users.reviewer.locale }
+        preferences: { locale: seedFixtures.users.reviewer.locale },
+        lastSeenAt: new Date()
       }
     },
     { upsert: true, new: true, setDefaultsOnInsert: true }
@@ -135,7 +141,12 @@ export const seedDevelopmentData = async () => {
           projectId: project._id,
           userId: owner._id,
           role: 'owner',
-          invitedById: owner._id
+          status: 'active',
+          invitedById: owner._id,
+          invitedAt: new Date(),
+          acceptedAt: new Date(),
+          joinedAt: new Date(),
+          removedAt: null
         }
       },
       { upsert: true, new: true, setDefaultsOnInsert: true }
@@ -148,7 +159,12 @@ export const seedDevelopmentData = async () => {
           projectId: project._id,
           userId: editor._id,
           role: 'editor',
-          invitedById: owner._id
+          status: 'active',
+          invitedById: owner._id,
+          invitedAt: new Date(),
+          acceptedAt: new Date(),
+          joinedAt: new Date(),
+          removedAt: null
         }
       },
       { upsert: true, new: true, setDefaultsOnInsert: true }
@@ -161,7 +177,12 @@ export const seedDevelopmentData = async () => {
           projectId: project._id,
           userId: reviewer._id,
           role: 'reviewer',
-          invitedById: owner._id
+          status: 'active',
+          invitedById: owner._id,
+          invitedAt: new Date(),
+          acceptedAt: new Date(),
+          joinedAt: new Date(),
+          removedAt: null
         }
       },
       { upsert: true, new: true, setDefaultsOnInsert: true }
