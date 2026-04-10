@@ -21,6 +21,11 @@ export const badRequest = (message, details) =>
 export const conflict = (message = 'That resource already exists or is already in use.') =>
   new AppError({ statusCode: 409, code: 'CONFLICT', message });
 
+export const staleState = (
+  message = 'A newer version of this resource exists.',
+  details
+) => new AppError({ statusCode: 409, code: 'STALE_STATE', message, details });
+
 export const unauthorized = (message = 'You must sign in to continue.') =>
   new AppError({ statusCode: 401, code: 'AUTH_REQUIRED', message });
 

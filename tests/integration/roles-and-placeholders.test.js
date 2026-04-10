@@ -67,17 +67,23 @@ describe('role middleware and placeholder APIs', () => {
     expect(otherNoteResponse.body.error.code).toBe('FORBIDDEN');
   });
 
-  it('returns a standard 501 envelope for scaffolded API endpoints', async () => {
+  it('returns a real scene bootstrap response while other scene version endpoints stay scaffolded', async () => {
     await loginAsUser(stack.request, seedFixtures.users.owner.email);
 
-    const response = await stack.request.get(
+    const bootstrapResponse = await stack.request.get(
       `/api/v1/projects/${seedFixtures.project.publicId}/scripts/${seedFixtures.script.publicId}/scenes/${seedFixtures.scenes.intro.publicId}`
     );
 
-    expect(response.status).toBe(501);
-    expect(response.body.error.code).toBe('NOT_IMPLEMENTED');
-    expect(response.body.error.details.route).toBe(
-      '/projects/:projectId/scripts/:scriptId/scenes/:sceneId'
+    expect(bootstrapResponse.status).toBe(200);
+    expect(bootstrapResponse.body.data.scene.publicId).toBe(
+      seedFixtures.scenes.intro.publicId
     );
+
+    const versionsResponse = await stack.request.get(
+      `/api/v1/projects/${seedFixtures.project.publicId}/scripts/${seedFixtures.script.publicId}/scenes/${seedFixtures.scenes.intro.publicId}/versions`
+    );
+
+    expect(versionsResponse.status).toBe(501);
+    expect(versionsResponse.body.error.code).toBe('NOT_IMPLEMENTED');
   });
 });

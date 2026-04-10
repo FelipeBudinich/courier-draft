@@ -37,3 +37,124 @@
     var(--page-9x16-margin-left);
 }
 
+.screenplay-page--editor {
+  position: relative;
+  width: min(100%, var(--page-us-letter-width));
+  min-height: var(--page-us-letter-height);
+  padding:
+    var(--page-us-letter-margin-top)
+    0
+    var(--page-us-letter-margin-bottom)
+    0;
+  background:
+    linear-gradient(
+      90deg,
+      transparent 1.7in,
+      rgba(34, 42, 56, 0.06) 1.7in,
+      rgba(34, 42, 56, 0.06) calc(100% - 1.1in),
+      transparent calc(100% - 1.1in)
+    ),
+    linear-gradient(
+      180deg,
+      rgba(34, 42, 56, 0.04),
+      rgba(34, 42, 56, 0)
+    ),
+    var(--screenplay-page-background);
+}
+
+.screenplay-editor-screen {
+  display: flex;
+  justify-content: center;
+}
+
+.screenplay-editor {
+  min-height: calc(
+    var(--page-us-letter-height) -
+    var(--page-us-letter-margin-top) -
+    var(--page-us-letter-margin-bottom)
+  );
+}
+
+.screenplay-editor__surface {
+  min-height: calc(
+    var(--page-us-letter-height) -
+    var(--page-us-letter-margin-top) -
+    var(--page-us-letter-margin-bottom)
+  );
+  outline: none;
+  font-family: "Courier New", Courier, monospace;
+  font-size: var(--screenplay-font-size);
+  line-height: 1;
+  color: #222a38;
+}
+
+.screenplay-editor__surface .ProseMirror {
+  min-height: inherit;
+  outline: none;
+}
+
+.screenplay-block {
+  min-height: 1em;
+  margin-top: 0;
+  margin-bottom: 0;
+  white-space: pre-wrap;
+}
+
+.screenplay-block--slugline,
+.screenplay-block--action,
+.screenplay-block--shot {
+  margin-left: 1.7in;
+  margin-right: 1.1in;
+}
+
+.screenplay-block--dialogue {
+  margin-left: 2.7in;
+  margin-right: 2.4in;
+}
+
+.screenplay-block--character {
+  margin-left: 4.1in;
+  margin-right: 1.8in;
+}
+
+.screenplay-block--parenthetical {
+  margin-left: 3.4in;
+  margin-right: 3.1in;
+}
+
+.screenplay-block--transition {
+  margin-left: 6in;
+  margin-right: 1in;
+}
+
+.screenplay-block--centered {
+  margin-left: 1.7in;
+  margin-right: 1.1in;
+  text-align: center;
+}
+
+.screenplay-dual-dialogue {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.35in;
+  margin-left: 2.15in;
+  margin-right: 1.15in;
+}
+
+.screenplay-dual-dialogue__side {
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .screenplay-page--editor {
+    width: 100%;
+    min-height: auto;
+    padding-top: 0.85in;
+    padding-bottom: 0.85in;
+  }
+
+  .screenplay-editor,
+  .screenplay-editor__surface {
+    min-height: 60vh;
+  }
+}

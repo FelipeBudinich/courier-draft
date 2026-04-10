@@ -23,6 +23,7 @@ import {
   validatePlacementParent
 } from './semantics.js';
 import { buildScriptActivityMessage, emitScriptActivity } from '../scripts/helpers.js';
+import { emptySceneDocument } from '../scenes/document-constants.js';
 
 const idString = (value) => (value ? String(value) : null);
 
@@ -509,14 +510,18 @@ export const createOutlineNode = async ({
               scriptId: script._id,
               outlineNodeId: null,
               title: trimmedTitle,
+              documentSchemaVersion: 1,
               structuredBody: {
-                blocks: [],
+                blocks: emptySceneDocument().blocks,
                 cachedSlugline: null,
                 characterRefs: [],
                 locationRefs: []
               },
+              headDocument: emptySceneDocument(),
+              headRevision: 0,
               headContent: '',
-              headUpdatedAt: new Date()
+              headUpdatedAt: new Date(),
+              updatedByUserId: actor._id
             }
           ],
           { session }

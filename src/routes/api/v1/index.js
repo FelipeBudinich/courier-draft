@@ -5,6 +5,7 @@ import invitesRouter from './invites.js';
 import meRouter from './me.js';
 import placeholdersRouter from './placeholders.js';
 import projectsRouter from './projects.js';
+import scenesRouter from './scenes.js';
 import scriptsRouter from './scripts.js';
 import usersRouter from './users.js';
 
@@ -16,6 +17,7 @@ router.use(usersRouter);
 router.use(invitesRouter);
 router.use(projectsRouter);
 router.use(scriptsRouter);
+router.use(scenesRouter);
 router.use(placeholdersRouter);
 
 export default router;

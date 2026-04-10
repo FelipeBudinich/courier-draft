@@ -194,6 +194,7 @@ These routes return JSON and should be treated as the main durable command/read 
 | DELETE | `/api/v1/projects/:projectId/scripts/:scriptId/outline/nodes/:nodeId` | Editor+ | Delete outline node |
 | GET | `/api/v1/projects/:projectId/scripts/:scriptId/scenes/:sceneId` | Member | Scene bootstrap with current head and metadata |
 | PATCH | `/api/v1/projects/:projectId/scripts/:scriptId/scenes/:sceneId` | Editor+ | Update scene metadata only |
+| PUT | `/api/v1/projects/:projectId/scripts/:scriptId/scenes/:sceneId/head` | Editor+ | Persist the current scene head draft |
 | GET | `/api/v1/projects/:projectId/scripts/:scriptId/scenes/:sceneId/versions` | Member | Scene version list |
 | GET | `/api/v1/projects/:projectId/scripts/:scriptId/scenes/:sceneId/versions/:versionId` | Member | Scene version detail |
 | POST | `/api/v1/projects/:projectId/scripts/:scriptId/scenes/:sceneId/versions/major-save` | Editor+ | Create scene major save |

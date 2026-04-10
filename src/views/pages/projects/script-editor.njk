@@ -2,13 +2,17 @@
 
 {% block title %}{{ script.title }} · {{ t('pages.editor.heading') }}{% endblock %}
 
+{% block scripts %}
+  <script type="module" src="{{ assetPath('/build/editor.js') }}"></script>
+{% endblock %}
+
 {% block content %}
   <div
     class="space-y-6"
     data-script-shell
     data-project-id="{{ project.id }}"
     data-script-id="{{ script.id }}"
-    data-outline-fragment-url="/fragments/projects/{{ project.id }}/scripts/{{ script.id }}/outline-tree"
+    data-outline-fragment-url="/fragments/projects/{{ project.id }}/scripts/{{ script.id }}/outline-tree?surface=editor{% if activeSceneId %}&sceneId={{ activeSceneId }}{% endif %}"
   >
     <section class="hero-panel">
       <div class="flex flex-wrap items-center gap-3">
@@ -16,35 +20,152 @@
         <span class="badge">{{ script.sceneNumberMode | upper }}</span>
         <span class="text-sm text-ink/55" data-script-connection-state>{{ t('pages.projectOverview.connecting') }}</span>
       </div>
-      <h2 class="mt-4 text-4xl text-ink">{{ t('pages.editor.heading') }}</h2>
-      <p class="mt-3 max-w-3xl text-lg leading-8 text-ink/70">{{ t('pages.editor.description') }}</p>
-      <div class="mt-5 flex flex-wrap gap-3">
-        <a class="btn-primary" href="/projects/{{ project.id }}/scripts/{{ script.id }}">{{ t('pages.scriptActions.backToOverview') }}</a>
+      <div class="mt-4 flex flex-wrap items-start justify-between gap-4">
+        <div class="max-w-3xl space-y-3">
+          <h2 class="text-4xl text-ink">{{ t('pages.editor.heading') }}</h2>
+          <p class="text-lg leading-8 text-ink/70">{{ t('pages.editor.description') }}</p>
+          <div class="flex flex-wrap gap-2 text-sm text-ink/70">
+            <span>{{ script.status }}</span>
+            <span>•</span>
+            <span>{{ script.counts.sceneCount }} {{ t('sections.scenes') | lower }}</span>
+            {% if script.genre %}
+              <span>•</span>
+              <span>{{ script.genre }}</span>
+            {% endif %}
+            {% if script.language %}
+              <span>•</span>
+              <span>{{ script.language }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <a class="btn-primary" href="/projects/{{ project.id }}/scripts/{{ script.id }}">{{ t('pages.scriptActions.backToOverview') }}</a>
+        </div>
       </div>
+      {% if script.authors.length %}
+        <p class="mt-4 text-sm text-ink/65">
+          {{ t('pages.editor.authorsLabel') }}: {{ script.authors | join(', ') }}
+        </p>
+      {% endif %}
     </section>
 
     <section class="grid gap-6 xl:grid-cols-[22rem,minmax(0,1fr)]">
-      <div data-outline-fragment-target>
-        {% include "partials/outline-tree.njk" %}
-      </div>
-
-      <div class="space-y-6">
+      <aside class="space-y-4">
         <article class="panel space-y-4">
           <div class="flex items-center justify-between gap-3">
-            <h3 class="text-2xl text-ink">{{ script.title }}</h3>
-            <span class="badge">
-              {% if permissions.canEdit %}
-                {{ t('pages.editor.canEdit') }}
-              {% else %}
-                {{ t('pages.editor.readOnly') }}
-              {% endif %}
-            </span>
+            <div>
+              <h3 class="text-xl text-ink">{{ t('pages.editor.sceneListHeading') }}</h3>
+              <p class="text-sm text-ink/60">{{ t('pages.editor.sceneListHelp') }}</p>
+            </div>
+            <span class="badge">{{ sceneEntries.length }}</span>
           </div>
-          <p class="text-sm leading-7 text-ink/70">{{ t('pages.editor.placeholderBody') }}</p>
+          {% if sceneEntries.length %}
+            <label class="space-y-2 text-sm text-ink/70">
+              <span>{{ t('pages.editor.sceneSelectLabel') }}</span>
+              <select class="input w-full" data-scene-select>
+                {% for entry in sceneEntries %}
+                  <option value="{{ entry.sceneId }}" {% if activeSceneId == entry.sceneId %}selected{% endif %}>
+                    {% if entry.displaySceneNumber %}{{ entry.displaySceneNumber }} · {% endif %}{{ entry.title }}
+                  </option>
+                {% endfor %}
+              </select>
+            </label>
+          {% else %}
+            <p class="text-sm text-ink/60">{{ t('pages.editor.noScenesHelp') }}</p>
+          {% endif %}
         </article>
 
-        {% include "partials/activity-feed.njk" %}
-      </div>
+        <div data-outline-fragment-target>
+          {% set surface = 'editor' %}
+          {% include "partials/outline-tree.njk" %}
+        </div>
+      </aside>
+
+      {% if activeScene and editorBootJson %}
+        <section class="space-y-6" data-editor-page>
+          <script type="application/json" data-editor-boot>{{ editorBootJson | safe }}</script>
+
+          <article class="panel space-y-4">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div class="space-y-2">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="badge">{{ t('pages.editor.activeSceneLabel') }}</span>
+                  <span class="badge" data-scene-number>
+                    {% if activeScene.displayedSceneNumber %}{{ activeScene.displayedSceneNumber }}{% else %}—{% endif %}
+                  </span>
+                  <span class="badge" data-read-only-badge {% if permissions.canEdit %}hidden{% endif %}>
+                    {{ t('pages.editor.readOnly') }}
+                  </span>
+                </div>
+                <h3 class="text-2xl text-ink" data-scene-title>
+                  {{ activeScene.structuredBody.cachedSlugline or activeScene.title }}
+                </h3>
+                <p class="text-sm text-ink/60">{{ activeScene.title }}</p>
+              </div>
+
+              <div class="rounded-3xl border border-ink/10 bg-mist/70 px-4 py-3" data-save-status-panel data-save-state="{% if permissions.canEdit %}saved{% else %}readOnly{% endif %}">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="badge" data-save-state-badge>
+                    {% if permissions.canEdit %}
+                      {{ t('pages.editor.saveStates.saved') }}
+                    {% else %}
+                      {{ t('pages.editor.saveStates.readOnly') }}
+                    {% endif %}
+                  </span>
+                  <button class="btn-secondary" type="button" data-reload-latest hidden>{{ t('pages.editor.reloadLatest') }}</button>
+                </div>
+                <p class="mt-2 text-xs uppercase tracking-[0.18em] text-ink/45">{{ t('pages.editor.lastSavedLabel') }}</p>
+                <p class="mt-1 text-sm text-ink/70" data-last-saved>
+                  {% if activeScene.headUpdatedAt %}
+                    {{ formatDate(activeScene.headUpdatedAt) }}
+                  {% else %}
+                    {{ t('pages.editor.notSavedYet') }}
+                  {% endif %}
+                </p>
+                <p class="mt-2 text-sm text-rose-700" data-editor-message hidden></p>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-end gap-3 border-t border-ink/10 pt-4">
+              <label class="space-y-2 text-sm text-ink/70">
+                <span>{{ t('pages.editor.blockTypeLabel') }}</span>
+                <select class="input min-w-[14rem]" data-block-type-select {% if not permissions.canEdit %}disabled{% endif %}>
+                  {% for blockType in blockTypeOptions %}
+                    <option value="{{ blockType }}">{{ t('pages.editor.blockTypes.' + blockType) }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <button class="btn-secondary" type="button" data-insert-dual-dialogue {% if not permissions.canEdit %}disabled{% endif %}>
+                {{ t('pages.editor.insertDualDialogue') }}
+              </button>
+              <button class="btn-primary" type="button" data-save-now {% if not permissions.canEdit %}disabled{% endif %}>
+                {{ t('pages.editor.saveNow') }}
+              </button>
+            </div>
+          </article>
+
+          <article class="panel overflow-x-auto">
+            <div class="screenplay-editor-screen min-w-[19rem]">
+              <div class="screenplay-page screenplay-page--editor rounded-[2rem] border border-ink/10 shadow-panel">
+                <div class="screenplay-editor" data-editor-canvas></div>
+              </div>
+            </div>
+          </article>
+        </section>
+      {% else %}
+        <section class="space-y-6">
+          <article class="panel space-y-4">
+            <div class="space-y-2">
+              <span class="badge">{{ t('sections.scenes') }}</span>
+              <h3 class="text-2xl text-ink">{{ t('pages.editor.noScenesHeading') }}</h3>
+            </div>
+            <p class="max-w-2xl text-sm leading-7 text-ink/70">{{ t('pages.editor.noScenesBody') }}</p>
+            <div class="flex flex-wrap gap-3">
+              <a class="btn-primary" href="/projects/{{ project.id }}/scripts/{{ script.id }}">{{ t('pages.editor.returnToOutline') }}</a>
+            </div>
+          </article>
+        </section>
+      {% endif %}
     </section>
   </div>
 {% endblock %}

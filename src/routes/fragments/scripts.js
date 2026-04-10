@@ -31,7 +31,8 @@ router.get(
       permissions: {
         canEdit: ['owner', 'editor'].includes(req.projectRole)
       },
-      surface: 'fragment'
+      surface: req.query.surface === 'editor' ? 'editor' : 'fragment',
+      activeSceneId: req.query.sceneId ? String(req.query.sceneId) : null
     });
   })
 );

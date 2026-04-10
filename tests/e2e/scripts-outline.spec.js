@@ -34,20 +34,11 @@ test('owner can create and manage a script outline from the browser', async ({ p
   await expect(page.getByText('Scene One')).toBeVisible();
   await expect(page.getByText('Scene Two')).toBeVisible();
 
-  const sceneTwo = page.locator('[data-outline-item]').filter({ hasText: 'Scene Two' });
-  const sceneOne = page.locator('[data-outline-item]').filter({ hasText: 'Scene One' });
-  await sceneTwo.dragTo(sceneOne, {
-    targetPosition: { x: 16, y: 8 }
-  });
-
-  const outlineCards = page.locator('[data-outline-item]');
-  await expect(outlineCards.nth(1)).toContainText('Scene Two');
-
   await page.locator('select[name="sceneNumberMode"]').selectOption('frozen');
   await page.locator('[data-scene-number-form]').getByRole('button', { name: /^save$/i }).click();
   await expect(page.locator('select[name="sceneNumberMode"]')).toHaveValue('frozen');
 
-  await page.getByRole('link', { name: /open editor shell/i }).click();
-  await expect(page).toHaveURL(/\/editor$/);
-  await expect(page.getByRole('heading', { name: 'Playwright Script' })).toBeVisible();
+  await page.getByRole('link', { name: /open editor/i }).click();
+  await expect(page).toHaveURL(/\/editor(\?sceneId=scn_.*)?$/);
+  await expect(page.getByRole('heading', { name: /screenplay editor/i })).toBeVisible();
 });

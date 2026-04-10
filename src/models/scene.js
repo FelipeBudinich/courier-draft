@@ -4,6 +4,30 @@ import { publicIdPlugin } from './plugins/public-id.js';
 
 const { Schema } = mongoose;
 
+const derivedBodySchema = new Schema(
+  {
+    blocks: {
+      type: [Schema.Types.Mixed],
+      default: []
+    },
+    cachedSlugline: {
+      type: String,
+      default: null
+    },
+    characterRefs: {
+      type: [String],
+      default: []
+    },
+    locationRefs: {
+      type: [String],
+      default: []
+    }
+  },
+  {
+    _id: false
+  }
+);
+
 const sceneSchema = new Schema(
   {
     projectId: {
@@ -27,23 +51,21 @@ const sceneSchema = new Schema(
       required: true,
       trim: true
     },
+    documentSchemaVersion: {
+      type: Number,
+      default: 1
+    },
     structuredBody: {
-      blocks: {
-        type: [Schema.Types.Mixed],
-        default: []
-      },
-      cachedSlugline: {
-        type: String,
-        default: null
-      },
-      characterRefs: {
-        type: [String],
-        default: []
-      },
-      locationRefs: {
-        type: [String],
-        default: []
-      }
+      type: derivedBodySchema,
+      default: () => ({})
+    },
+    headDocument: {
+      type: Schema.Types.Mixed,
+      default: null
+    },
+    headRevision: {
+      type: Number,
+      default: 0
     },
     headContent: {
       type: String,
@@ -52,6 +74,11 @@ const sceneSchema = new Schema(
     headUpdatedAt: {
       type: Date,
       default: Date.now
+    },
+    updatedByUserId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
     },
     latestMajorVersionId: {
       type: Schema.Types.ObjectId,

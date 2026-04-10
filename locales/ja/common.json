@@ -223,12 +223,46 @@
       "delete": "削除"
     },
     "editor": {
-      "heading": "エディターシェルの足場",
-      "description": "共同編集そのものは後続ですが、シェル、ルーム契約、役割に応じた編集可否は準備済みです。",
+      "heading": "脚本エディター",
+      "description": "オートセーブ、シーン切り替え、ロール別編集可否を備えた構造化キャンバスでシーンドラフトを書けます。",
       "socketNamespace": "ソケット名前空間",
-      "canEdit": "このユーザーは今後の共同編集フローで編集できます。",
-      "readOnly": "このユーザーは読み取り専用でシーンに参加します。",
-      "placeholderBody": "脚本本文エディター自体はこの PR では意図的に後回しです。このシェルではアウトライン側バー、脚本プレゼンス、将来のマウントポイントを先に整えています。"
+      "canEdit": "編集可能",
+      "readOnly": "読み取り専用",
+      "placeholderBody": "脚本本文エディター自体はこの PR では意図的に後回しです。このシェルではアウトライン側バー、脚本プレゼンス、将来のマウントポイントを先に整えています。",
+      "authorsLabel": "作者",
+      "sceneListHeading": "シーン移動",
+      "sceneListHelp": "正規のアウトライン順でシーンを選びます。",
+      "sceneSelectLabel": "現在のシーン",
+      "noScenesHelp": "ここで書き始めるにはアウトラインでシーンを作成してください。",
+      "activeSceneLabel": "現在のシーン",
+      "reloadLatest": "最新を再読込",
+      "lastSavedLabel": "最終保存",
+      "notSavedYet": "まだ保存されていません",
+      "blockTypeLabel": "現在のブロック種別",
+      "insertDualDialogue": "二重台詞を挿入",
+      "saveNow": "今すぐ保存",
+      "noScenesHeading": "この脚本にはまだシーンがありません。",
+      "noScenesBody": "シーン執筆はアウトラインから始まります。脚本概要でシーンを追加してから、ここに戻って下書きを作成してください。",
+      "returnToOutline": "脚本概要へ戻る",
+      "toggleChildren": "子要素を切り替え",
+      "saveStates": {
+        "saved": "保存済み",
+        "saving": "保存中…",
+        "unsaved": "未保存の変更",
+        "failed": "保存失敗",
+        "readOnly": "読み取り専用",
+        "stale": "古いローカルコピー"
+      },
+      "blockTypes": {
+        "slugline": "スラッグライン",
+        "action": "アクション",
+        "character": "キャラクター",
+        "parenthetical": "ト書き",
+        "dialogue": "台詞",
+        "transition": "トランジション",
+        "shot": "ショット",
+        "centered": "中央揃え"
+      }
     },
     "todo": {
       "title": "基盤プレースホルダー",

@@ -15,10 +15,10 @@
     <link rel="stylesheet" href="{{ assetPath('/css/screenplay.css') }}" />
     <script src="/socket.io/socket.io.js" defer></script>
     <script type="module" src="/js/main.js"></script>
+    {% block scripts %}{% endblock %}
   </head>
   <body>
     {% include "partials/flash.njk" %}
     {% block body %}{% endblock %}
   </body>
 </html>
-

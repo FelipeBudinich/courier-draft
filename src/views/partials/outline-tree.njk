@@ -1,4 +1,4 @@
-{% macro renderOutlineNodes(nodes, permissions) %}
+{% macro renderOutlineNodes(nodes, permissions, surface, activeSceneId) %}
   <ol class="space-y-3">
     {% for node in nodes %}
       <li class="space-y-3">
@@ -8,7 +8,7 @@
           data-node-id="{{ node.id }}"
           data-node-type="{{ node.type }}"
           data-parent-id="{{ node.placementParentId or '' }}"
-          {% if permissions and permissions.canEdit %}draggable="true"{% endif %}
+          {% if permissions and permissions.canEdit and surface != 'editor' %}draggable="true"{% endif %}
         >
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="space-y-1">
@@ -17,7 +17,17 @@
                   <span class="badge">{{ node.displaySceneNumber }}</span>
                 {% endif %}
                 <span class="badge">{{ node.type }}</span>
-                <p class="font-semibold text-ink">{{ node.title }}</p>
+                {% if surface == 'editor' and node.type == 'scene' and node.sceneId %}
+                  <a
+                    class="font-semibold text-ink underline-offset-4 hover:text-accent hover:underline {% if activeSceneId == node.sceneId %}text-accent underline{% endif %}"
+                    href="?sceneId={{ node.sceneId }}"
+                    data-scene-link="{{ node.sceneId }}"
+                  >
+                    {{ node.title }}
+                  </a>
+                {% else %}
+                  <p class="font-semibold text-ink">{{ node.title }}</p>
+                {% endif %}
               </div>
               {% if node.type == 'scene' %}
                 <p class="text-xs text-ink/55">
@@ -28,7 +38,16 @@
               {% endif %}
             </div>
 
-            {% if permissions and permissions.canEdit %}
+            {% if surface == 'editor' and node.canHaveChildren and node.children.length %}
+              <button
+                class="btn-secondary"
+                type="button"
+                data-outline-toggle="{{ node.id }}-children"
+                aria-expanded="true"
+              >
+                {{ t('pages.editor.toggleChildren') }}
+              </button>
+            {% elseif permissions and permissions.canEdit %}
               <div class="flex flex-wrap gap-2">
                 {% if node.type == 'act' %}
                   <button class="btn-secondary" type="button" data-outline-create data-node-type="beat" data-parent-id="{{ node.id }}">{{ t('pages.scriptActions.addBeat') }}</button>
@@ -44,9 +63,14 @@
         </article>
 
         {% if node.canHaveChildren %}
-          <div class="ml-5 border-l border-ink/10 pl-4" data-outline-container data-parent-id="{{ node.id }}">
+          <div
+            class="ml-5 border-l border-ink/10 pl-4"
+            data-outline-container
+            data-parent-id="{{ node.id }}"
+            {% if surface == 'editor' %}id="{{ node.id }}-children"{% endif %}
+          >
             {% if node.children.length %}
-              {{ renderOutlineNodes(node.children, permissions) }}
+              {{ renderOutlineNodes(node.children, permissions, surface, activeSceneId) }}
             {% elseif permissions and permissions.canEdit %}
               <p class="rounded-2xl border border-dashed border-ink/10 px-4 py-3 text-xs text-ink/50">
                 {{ t('pages.scriptSections.dropHint') }}
@@ -67,7 +91,7 @@
         <p class="text-sm text-ink/60">{{ t('pages.scriptSections.outlineMode') }}: {{ script.sceneNumberMode | upper }}</p>
       {% endif %}
     </div>
-    {% if permissions and permissions.canEdit %}
+    {% if permissions and permissions.canEdit and surface != 'editor' %}
       <div class="flex flex-wrap gap-2">
         <button class="btn-secondary" type="button" data-outline-create data-node-type="act">{{ t('pages.scriptActions.addAct') }}</button>
         <button class="btn-secondary" type="button" data-outline-create data-node-type="beat">{{ t('pages.scriptActions.addBeat') }}</button>
@@ -78,7 +102,7 @@
 
   {% if outlineNodes.length %}
     <div data-outline-container data-parent-id="">
-      {{ renderOutlineNodes(outlineNodes, permissions) }}
+      {{ renderOutlineNodes(outlineNodes, permissions, surface, activeSceneId) }}
     </div>
   {% else %}
     <p class="text-sm text-ink/60">{{ t('fragments.outline.empty') }}</p>

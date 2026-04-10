@@ -223,12 +223,46 @@
       "delete": "Delete"
     },
     "editor": {
-      "heading": "Editor shell scaffold",
-      "description": "The collaborative editor itself is deferred, but the shell, room contract, and role-aware editability are ready.",
+      "heading": "Screenplay editor",
+      "description": "Write scene drafts in a structured screenplay canvas with autosave, scene switching, and role-aware editability.",
       "socketNamespace": "Socket namespace",
-      "canEdit": "This user can edit in future collaboration flows.",
-      "readOnly": "This user joins the scene in read-only mode.",
-      "placeholderBody": "The screenplay body editor is intentionally deferred in this PR. This shell keeps the outline sidebar, script presence, and future editor mount point ready."
+      "canEdit": "Editable",
+      "readOnly": "Read-only",
+      "placeholderBody": "The screenplay body editor is intentionally deferred in this PR. This shell keeps the outline sidebar, script presence, and future editor mount point ready.",
+      "authorsLabel": "Authors",
+      "sceneListHeading": "Scene navigation",
+      "sceneListHelp": "Choose a scene from the canonical outline order.",
+      "sceneSelectLabel": "Active scene",
+      "noScenesHelp": "Create a scene in the outline to start writing here.",
+      "activeSceneLabel": "Active scene",
+      "reloadLatest": "Reload latest",
+      "lastSavedLabel": "Last saved",
+      "notSavedYet": "Not saved yet",
+      "blockTypeLabel": "Current block type",
+      "insertDualDialogue": "Insert dual dialogue",
+      "saveNow": "Save now",
+      "noScenesHeading": "This script does not have any scenes yet.",
+      "noScenesBody": "Scene writing starts from the outline. Add a scene on the script overview, then come back here to draft it.",
+      "returnToOutline": "Return to script overview",
+      "toggleChildren": "Toggle children",
+      "saveStates": {
+        "saved": "Saved",
+        "saving": "Saving…",
+        "unsaved": "Unsaved changes",
+        "failed": "Save failed",
+        "readOnly": "Read-only",
+        "stale": "Stale local copy"
+      },
+      "blockTypes": {
+        "slugline": "Slugline",
+        "action": "Action",
+        "character": "Character",
+        "parenthetical": "Parenthetical",
+        "dialogue": "Dialogue",
+        "transition": "Transition",
+        "shot": "Shot",
+        "centered": "Centered"
+      }
     },
     "todo": {
       "title": "Foundation placeholder",

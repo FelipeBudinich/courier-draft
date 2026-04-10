@@ -223,12 +223,46 @@
       "delete": "Eliminar"
     },
     "editor": {
-      "heading": "Scaffold de la shell del editor",
-      "description": "El editor colaborativo completo se posterga, pero la shell, el contrato de rooms y la editabilidad por rol ya están listas.",
+      "heading": "Editor de guion",
+      "description": "Escribe borradores de escena en un lienzo estructurado con autosave, cambio de escenas y edición según el rol.",
       "socketNamespace": "Namespace del socket",
-      "canEdit": "Este usuario podrá editar en los futuros flujos colaborativos.",
-      "readOnly": "Este usuario entra a la escena en modo solo lectura.",
-      "placeholderBody": "El editor del cuerpo del guion se deja a propósito para un PR posterior. Esta shell mantiene listo el sidebar del esquema, la presencia del guion y el punto de montaje futuro."
+      "canEdit": "Editable",
+      "readOnly": "Solo lectura",
+      "placeholderBody": "El editor del cuerpo del guion se deja a propósito para un PR posterior. Esta shell mantiene listo el sidebar del esquema, la presencia del guion y el punto de montaje futuro.",
+      "authorsLabel": "Autores",
+      "sceneListHeading": "Navegación de escenas",
+      "sceneListHelp": "Elige una escena según el orden canónico del esquema.",
+      "sceneSelectLabel": "Escena activa",
+      "noScenesHelp": "Crea una escena en el esquema para empezar a escribir aquí.",
+      "activeSceneLabel": "Escena activa",
+      "reloadLatest": "Recargar última",
+      "lastSavedLabel": "Último guardado",
+      "notSavedYet": "Todavía no se guardó",
+      "blockTypeLabel": "Tipo de bloque actual",
+      "insertDualDialogue": "Insertar diálogo dual",
+      "saveNow": "Guardar ahora",
+      "noScenesHeading": "Este guion todavía no tiene escenas.",
+      "noScenesBody": "La escritura de escenas empieza en el esquema. Agrega una escena en el resumen del guion y luego vuelve aquí para redactarla.",
+      "returnToOutline": "Volver al resumen del guion",
+      "toggleChildren": "Mostrar u ocultar hijos",
+      "saveStates": {
+        "saved": "Guardado",
+        "saving": "Guardando…",
+        "unsaved": "Cambios sin guardar",
+        "failed": "Error al guardar",
+        "readOnly": "Solo lectura",
+        "stale": "Copia local desactualizada"
+      },
+      "blockTypes": {
+        "slugline": "Encabezado",
+        "action": "Acción",
+        "character": "Personaje",
+        "parenthetical": "Acotación",
+        "dialogue": "Diálogo",
+        "transition": "Transición",
+        "shot": "Plano",
+        "centered": "Centrado"
+      }
     },
     "todo": {
       "title": "Placeholder de la fundación",
