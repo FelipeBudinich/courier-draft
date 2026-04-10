@@ -49,7 +49,7 @@
       {% endif %}
     </section>
 
-    <section class="grid gap-6 xl:grid-cols-[22rem,minmax(0,1fr)]">
+    <section class="grid gap-6 xl:grid-cols-[20rem,minmax(0,1fr),24rem]">
       <aside class="space-y-4">
         <article class="panel space-y-4">
           <div class="flex items-center justify-between gap-3">
@@ -174,6 +174,20 @@
           </article>
         </section>
       {% endif %}
+
+      <aside
+        class="space-y-6"
+        data-notes-shell
+        data-project-id="{{ project.id }}"
+        data-script-id="{{ script.id }}"
+        data-scene-id="{{ activeSceneId }}"
+        data-notes-surface="editor"
+        data-notes-fragment-url="/fragments/projects/{{ project.id }}/scripts/{{ script.id }}/notes-panel"
+      >
+        <div data-notes-fragment-target>
+          {% include "partials/notes-panel.njk" %}
+        </div>
+      </aside>
     </section>
   </div>
 {% endblock %}

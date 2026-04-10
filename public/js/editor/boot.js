@@ -1,5 +1,7 @@
 import { createCollabClient } from '../collab-client.js';
 import { createCollabStateManager } from './collab-state.js';
+import { createNoteHighlightController } from './note-highlights.js';
+import { buildSelectionAnchor } from './note-selection.js';
 import { createSaveStateUI } from './save-state-ui.js';
 import { createSceneLoader } from './scene-loader.js';
 import { SceneRealtimeProvider } from './realtime-provider.js';
@@ -130,6 +132,10 @@ const setEditorControls = ({ elements, canEdit, connected }) => {
   elements.dualDialogueButton.disabled = !enabled;
 };
 
+const getEditorNotesController = () =>
+  document.querySelector('[data-notes-shell][data-notes-surface="editor"]')
+    ?.__notesPanelController ?? null;
+
 export const initEditorPage = () => {
   const page = document.querySelector('[data-editor-page]');
 
@@ -165,7 +171,21 @@ export const initEditorPage = () => {
     currentSceneId: boot.scene.publicId,
     runtime: null,
     collaborators: new Map(),
-    needsResync: false
+    needsResync: false,
+    activeNoteId: null,
+    pendingSelectionAnchor: null,
+    pendingFocusNoteId: null,
+    noteHighlights: createNoteHighlightController({
+      onOpenNote(noteId) {
+        window.dispatchEvent(
+          new CustomEvent('courier:open-note', {
+            detail: {
+              noteId
+            }
+          })
+        );
+      }
+    })
   };
   const socket = createCollabClient({
     namespace: boot.collaboration?.namespace ?? '/collab'
@@ -208,6 +228,11 @@ export const initEditorPage = () => {
       nextBootstrap.script.publicId,
       nextBootstrap.scene.publicId
     );
+    const notesShell = document.querySelector('[data-notes-shell][data-notes-surface="editor"]');
+    if (notesShell) {
+      notesShell.dataset.sceneId = nextBootstrap.scene.publicId;
+    }
+    getEditorNotesController()?.setSceneContext(nextBootstrap.scene.publicId);
     renderPresence();
   };
 
@@ -275,6 +300,7 @@ export const initEditorPage = () => {
     const nextEditor = new ScreenplayEditor({
       mountElement: elements.canvas,
       readOnly: !nextProvider.canEdit,
+      extraPlugins: [state.noteHighlights.plugin],
       collaboration: {
         xmlFragment: nextProvider.getXmlFragment(),
         awareness: nextProvider.awareness
@@ -282,9 +308,20 @@ export const initEditorPage = () => {
       onChange(documentValue) {
         setSceneMeta(elements, nextBootstrap, documentValue, nextProvider.canEdit);
       },
-      onSelectionChange(blockType) {
+      onSelectionChange({ blockType, view }) {
         if (elements.blockTypeSelect && blockType) {
           elements.blockTypeSelect.value = blockType;
+        }
+
+        state.pendingSelectionAnchor = buildSelectionAnchor({
+          view,
+          sceneId: nextBootstrap.scene.publicId
+        });
+        const notesController = getEditorNotesController();
+        if (state.pendingSelectionAnchor) {
+          notesController?.setSelectionAnchor(state.pendingSelectionAnchor);
+        } else {
+          notesController?.clearSelectionAnchor();
         }
       }
     });
@@ -299,6 +336,16 @@ export const initEditorPage = () => {
       nextEditor.getCanonicalDocument(),
       nextProvider.canEdit
     );
+    const notesController = getEditorNotesController();
+    if (state.pendingSelectionAnchor) {
+      notesController?.setSelectionAnchor(state.pendingSelectionAnchor);
+    } else {
+      notesController?.clearSelectionAnchor();
+    }
+    state.noteHighlights.update(nextEditor.view, {
+      notes: notesController?.getNotes?.() ?? [],
+      activeNoteId: state.activeNoteId
+    });
     collabState.clearMessage();
     collabState.setReadOnly(!nextProvider.canEdit, nextBootstrap.scene.headUpdatedAt);
     if (nextProvider.canEdit) {
@@ -458,6 +505,79 @@ export const initEditorPage = () => {
   socket.on('connect_error', () => {
     collabState.setConnectionStatus('unavailable');
     collabState.showMessage('Realtime connection is unavailable.');
+  });
+
+  window.addEventListener('courier:notes-list-changed', (event) => {
+    if (!state.runtime) {
+      return;
+    }
+
+    state.noteHighlights.update(state.runtime.editor.view, {
+      notes: event.detail?.notes ?? [],
+      activeNoteId: state.activeNoteId
+    });
+  });
+
+  window.addEventListener('courier:note-selected', (event) => {
+    state.activeNoteId = event.detail?.note?.id ?? null;
+
+    if (!state.runtime) {
+      return;
+    }
+
+    state.noteHighlights.update(state.runtime.editor.view, {
+      notes: getEditorNotesController()?.getNotes?.() ?? [],
+      activeNoteId: state.activeNoteId
+    });
+
+    const note = event.detail?.note;
+    if (
+      note &&
+      note.sceneId === state.currentSceneId &&
+      note.anchor &&
+      !note.isDetached
+    ) {
+      state.noteHighlights.focusNote(state.runtime.editor.view, note);
+      if (state.pendingFocusNoteId === note.id) {
+        state.pendingFocusNoteId = null;
+      }
+    }
+  });
+
+  window.addEventListener('courier:note-anchor-request', (event) => {
+    const note = event.detail?.note;
+    if (!note) {
+      return;
+    }
+
+    if (note.sceneId && note.sceneId !== state.currentSceneId) {
+      state.pendingFocusNoteId = note.id;
+      void navigateToScene(note.sceneId).catch((error) => {
+        collabState.showMessage(error.message);
+      });
+      return;
+    }
+
+    if (state.runtime && note.anchor && !note.isDetached) {
+      state.noteHighlights.focusNote(state.runtime.editor.view, note);
+    }
+  });
+
+  window.addEventListener('courier:notes-panel-ready', (event) => {
+    const controller = event.detail?.controller;
+    if (!controller) {
+      return;
+    }
+
+    if (state.pendingSelectionAnchor) {
+      controller.setSelectionAnchor(state.pendingSelectionAnchor);
+    } else {
+      controller.clearSelectionAnchor();
+    }
+
+    if (state.pendingFocusNoteId) {
+      void controller.openNote(state.pendingFocusNoteId);
+    }
   });
 
   page.addEventListener('click', (event) => {

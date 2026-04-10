@@ -66,6 +66,17 @@ export const seedFixtures = {
 };
 
 export const seedDevelopmentData = async () => {
+  const seededSceneDocument = {
+    schemaVersion: 1,
+    blocks: [
+      {
+        id: 'blk_intro_seed',
+        type: 'action',
+        text: 'A team of writers gathers around a whiteboard.'
+      }
+    ]
+  };
+
   const owner = await User.findOneAndUpdate(
     { email: seedFixtures.users.owner.email },
     {
@@ -220,12 +231,14 @@ export const seedDevelopmentData = async () => {
         projectId: project._id,
         scriptId: script._id,
         title: seedFixtures.scenes.intro.title,
+        documentSchemaVersion: seededSceneDocument.schemaVersion,
         structuredBody: {
-          blocks: [],
+          blocks: seededSceneDocument.blocks,
           cachedSlugline: null,
           characterRefs: [],
           locationRefs: []
         },
+        headDocument: seededSceneDocument,
         headContent: 'A team of writers gathers around a whiteboard.',
         headUpdatedAt: new Date()
       }
@@ -268,11 +281,17 @@ export const seedDevelopmentData = async () => {
         projectId: project._id,
         scriptId: script._id,
         sceneId: scene._id,
-        authorId: reviewer._id,
+        blockId: null,
+        authorUserId: reviewer._id,
         containerType: 'scene',
         containerId: scene._id,
-        body: 'Flag the visual motif here for the next draft.',
-        headUpdatedAt: new Date()
+        anchor: null,
+        isDetached: false,
+        detachedAt: null,
+        headText: 'Flag the visual motif here for the next draft.',
+        headRevision: 1,
+        headUpdatedAt: new Date(),
+        updatedByUserId: reviewer._id
       }
     },
     { upsert: true, new: true, setDefaultsOnInsert: true }
@@ -286,11 +305,17 @@ export const seedDevelopmentData = async () => {
         projectId: project._id,
         scriptId: script._id,
         sceneId: scene._id,
-        authorId: owner._id,
+        blockId: null,
+        authorUserId: owner._id,
         containerType: 'scene',
         containerId: scene._id,
-        body: 'Owner note for permission checks.',
-        headUpdatedAt: new Date()
+        anchor: null,
+        isDetached: false,
+        detachedAt: null,
+        headText: 'Owner note for permission checks.',
+        headRevision: 1,
+        headUpdatedAt: new Date(),
+        updatedByUserId: owner._id
       }
     },
     { upsert: true, new: true, setDefaultsOnInsert: true }
@@ -323,7 +348,7 @@ export const seedDevelopmentData = async () => {
         docType: 'note',
         docId: note._id,
         versionLabel: '1.0.0',
-        content: note.body,
+        content: note.headText,
         savedAt: new Date(),
         createdById: reviewer._id,
         isMajor: true
@@ -339,7 +364,7 @@ export const seedDevelopmentData = async () => {
     ),
     Note.updateOne(
       { _id: note._id },
-      { $set: { latestMajorVersionId: noteVersion._id } }
+      { $set: { currentMajorVersionId: noteVersion._id } }
     )
   ]);
 

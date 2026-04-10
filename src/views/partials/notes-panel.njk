@@ -1,16 +1,117 @@
-<section class="panel space-y-3">
-  <h2 class="text-xl text-ink">{{ t('fragments.notes.heading') }}</h2>
-  {% if notes.length %}
-    <div class="space-y-3">
-      {% for note in notes %}
-        <article class="list-card">
-          <p class="text-sm leading-6 text-ink">{{ note.body }}</p>
-          <p class="mt-2 text-xs text-ink/50">{{ formatDate(note.updatedAt) }}</p>
+<section class="panel space-y-4" data-notes-panel>
+  <script type="application/json" data-notes-panel-boot>{{ notesPanelBootJson | safe }}</script>
+
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h2 class="text-xl text-ink">{{ t('fragments.notes.heading') }}</h2>
+      <p class="text-sm text-ink/60">Collaborative plain-text notes for this workspace.</p>
+    </div>
+    <span class="badge">{{ notesPanel.notes.length }}</span>
+  </div>
+
+  <form class="grid gap-3 md:grid-cols-2 xl:grid-cols-4" data-notes-filters>
+    <label class="space-y-2">
+      <span class="text-sm font-semibold text-ink">Scope</span>
+      <select class="input" name="scope">
+        {% for scope in notesPanel.availableScopes %}
+          <option value="{{ scope }}" {% if notesPanel.filters.scope == scope %}selected{% endif %}>{{ scope | upper }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="space-y-2">
+      <span class="text-sm font-semibold text-ink">Ownership</span>
+      <select class="input" name="ownership">
+        <option value="all" {% if notesPanel.filters.ownership == 'all' %}selected{% endif %}>All notes</option>
+        <option value="mine" {% if notesPanel.filters.ownership == 'mine' %}selected{% endif %}>My notes</option>
+      </select>
+    </label>
+    <label class="space-y-2">
+      <span class="text-sm font-semibold text-ink">Type</span>
+      <select class="input" name="noteType">
+        <option value="all" {% if notesPanel.filters.noteType == 'all' %}selected{% endif %}>All notes</option>
+        <option value="anchored" {% if notesPanel.filters.noteType == 'anchored' %}selected{% endif %}>Anchored</option>
+        <option value="standalone" {% if notesPanel.filters.noteType == 'standalone' %}selected{% endif %}>Standalone</option>
+      </select>
+    </label>
+    <label class="flex items-center gap-3 rounded-2xl border border-ink/10 bg-white/60 px-4 py-3 text-sm text-ink">
+      <input type="checkbox" name="detached" {% if notesPanel.filters.detached == 'detached' %}checked{% endif %} />
+      <span>Detached only</span>
+    </label>
+  </form>
+
+  <form class="space-y-3" data-note-create-form>
+    <label class="space-y-2">
+      <span class="text-sm font-semibold text-ink">New note</span>
+      <textarea class="input min-h-28" name="text" placeholder="Capture feedback, questions, or research for later."></textarea>
+    </label>
+    <label class="space-y-2">
+      <span class="text-sm font-semibold text-ink">Standalone scope</span>
+      <select class="input" name="target">
+        {% for item in notesPanel.createTargets.project %}
+          <option value="project:{{ item.id }}">Project · {{ item.label }}</option>
+        {% endfor %}
+        {% for item in notesPanel.createTargets.script %}
+          <option value="script:{{ item.id }}">Script · {{ item.label }}</option>
+        {% endfor %}
+        {% for item in notesPanel.createTargets.act %}
+          <option value="act:{{ item.id }}">Act · {{ item.label }}</option>
+        {% endfor %}
+        {% for item in notesPanel.createTargets.beat %}
+          <option value="beat:{{ item.id }}">Beat · {{ item.label }}</option>
+        {% endfor %}
+        {% for item in notesPanel.createTargets.scene %}
+          <option value="scene:{{ item.id }}">Scene · {{ item.label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="flex flex-wrap items-center gap-3">
+      <button class="btn-primary" type="submit">Create note</button>
+      {% if notesPanel.surface == 'editor' %}
+        <button class="btn-secondary" type="button" data-create-anchored-note disabled>Create note from selection</button>
+        <p class="text-sm text-ink/55" data-anchor-selection-status hidden></p>
+      {% endif %}
+    </div>
+    <p class="text-sm text-ink/55" data-note-create-status></p>
+  </form>
+
+  {% if notesPanel.notes.length %}
+    <div class="space-y-3" data-notes-list>
+      {% for note in notesPanel.notes %}
+        <article
+          class="list-card space-y-3 transition-shadow duration-150"
+          data-note-item
+          data-note-id="{{ note.id }}"
+        >
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <button class="space-y-2 text-left" type="button" data-note-open="{{ note.id }}">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="badge">{{ note.container.type | upper }}</span>
+                {% if note.isAnchored %}
+                  <span class="badge">ANCHORED</span>
+                {% endif %}
+                {% if note.isDetached %}
+                  <span class="badge">DETACHED</span>
+                {% endif %}
+              </div>
+              <p class="text-sm leading-6 text-ink">{{ note.headPreview }}</p>
+            </button>
+            <div class="flex flex-wrap gap-2">
+              <button class="btn-secondary" type="button" data-note-copy="{{ note.id }}">Copy</button>
+              {% if note.anchorSummary and not note.isDetached %}
+                <button class="btn-secondary" type="button" data-note-jump="{{ note.id }}">Anchor</button>
+              {% endif %}
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-3 text-xs text-ink/50">
+            <span>{{ note.author.displayName if note.author else 'Unknown' }}</span>
+            <span>{{ formatDate(note.headUpdatedAt) }}</span>
+          </div>
         </article>
       {% endfor %}
     </div>
   {% else %}
     <p class="text-sm text-ink/60">{{ t('fragments.notes.empty') }}</p>
   {% endif %}
-</section>
 
+  <section class="panel-muted" data-note-detail hidden></section>
+</section>

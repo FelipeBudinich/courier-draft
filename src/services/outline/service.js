@@ -336,13 +336,28 @@ const createOutlineActivityAndAudit = async ({
   return activityEvent;
 };
 
-const deleteSceneArtifacts = async ({ sceneIds, session }) => {
-  if (!sceneIds.length) {
+const deleteSceneArtifacts = async ({ sceneIds, deletedOutlineNodeIds = [], session }) => {
+  if (!sceneIds.length && !deletedOutlineNodeIds.length) {
     return;
   }
 
+  const noteQuery = [];
+  if (sceneIds.length) {
+    noteQuery.push({
+      sceneId: { $in: sceneIds }
+    });
+  }
+
+  if (deletedOutlineNodeIds.length) {
+    noteQuery.push({
+      containerId: {
+        $in: deletedOutlineNodeIds
+      }
+    });
+  }
+
   const notes = await Note.find({
-    sceneId: { $in: sceneIds }
+    $or: noteQuery
   })
     .select('_id')
     .session(session);
@@ -360,7 +375,7 @@ const deleteSceneArtifacts = async ({ sceneIds, session }) => {
         }).session(session)
       : Promise.resolve(),
     Note.deleteMany({
-      sceneId: { $in: sceneIds }
+      $or: noteQuery
     }).session(session),
     Scene.deleteMany({
       _id: { $in: sceneIds }
@@ -985,6 +1000,9 @@ export const deleteOutlineNode = async ({
         }).session(session),
         deleteSceneArtifacts({
           sceneIds: deletedSceneIds,
+          deletedOutlineNodeIds: [...subtreeNodeIds].map(
+            (nodeId) => new mongoose.Types.ObjectId(nodeId)
+          ),
           session
         })
       ]);

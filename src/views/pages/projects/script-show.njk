@@ -130,6 +130,18 @@
       </div>
 
       <div class="space-y-6">
+        <div
+          data-notes-shell
+          data-project-id="{{ project.id }}"
+          data-script-id="{{ script.id }}"
+          data-notes-surface="script"
+          data-notes-fragment-url="/fragments/projects/{{ project.id }}/scripts/{{ script.id }}/notes-panel"
+        >
+          <div data-notes-fragment-target>
+            {% include "partials/notes-panel.njk" %}
+          </div>
+        </div>
+
         {% include "partials/activity-feed.njk" %}
 
         <article class="panel space-y-4">

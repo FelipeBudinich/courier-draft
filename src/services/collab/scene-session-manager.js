@@ -18,7 +18,11 @@ export const sceneSessionManager = {
   async ensureSession({ scene }) {
     const existing = sessions.get(scene.publicId);
     if (existing) {
-      return existing;
+      if (!existing.isLive()) {
+        existing.destroy();
+      } else {
+        return existing;
+      }
     }
 
     const session = SceneSession.create({

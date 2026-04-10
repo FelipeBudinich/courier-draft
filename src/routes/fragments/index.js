@@ -1,16 +1,18 @@
 import { Router } from 'express';
 
 import { asyncRoute } from '../../config/errors.js';
-import { DocumentVersion, Note, Scene } from '../../models/index.js';
+import { DocumentVersion, Scene } from '../../models/index.js';
 import { loadProjectMembership, requireAuth } from '../../middleware/auth.js';
 import { loadScript } from '../../middleware/resources.js';
+import { getOutlineReadModel } from '../../services/outline/service.js';
 import { setSurface } from '../../middleware/request-context.js';
 import { listPendingInvitesForUser } from '../../services/invites/service.js';
+import { getNotesPanelModel } from '../../services/notes/service.js';
 import {
   getProjectActivityReadModel,
   getProjectMembersReadModel
 } from '../../services/projects/service.js';
-import { renderFragment } from './helpers.js';
+import { renderFragment, serializeTemplateJson } from './helpers.js';
 import scriptsFragmentsRouter from './scripts.js';
 
 const router = Router();
@@ -64,14 +66,53 @@ router.get(
 );
 
 router.get(
+  '/projects/:projectId/notes-panel',
+  requireAuth,
+  loadProjectMembership,
+  asyncRoute(async (req, res) => {
+    const notesPanel = await getNotesPanelModel({
+      project: req.project,
+      currentUser: req.currentUser,
+      projectRole: req.projectRole,
+      surface: 'project'
+    });
+
+    renderFragment(res, 'partials/notes-panel.njk', {
+      notesPanel,
+      notesPanelBootJson: serializeTemplateJson(notesPanel)
+    });
+  })
+);
+
+router.get(
   '/projects/:projectId/scripts/:scriptId/notes-panel',
   requireAuth,
   loadProjectMembership,
   loadScript,
   asyncRoute(async (req, res) => {
-    const notes = await Note.find({ scriptId: req.script._id }).sort({ updatedAt: -1 }).limit(10);
+    const outline = await getOutlineReadModel({
+      script: req.script
+    });
+    const notesPanel = await getNotesPanelModel({
+      project: req.project,
+      script: req.script,
+      outlineNodes: outline.nodes,
+      currentUser: req.currentUser,
+      projectRole: req.projectRole,
+      surface: req.query.surface ? String(req.query.surface) : 'script',
+      sceneId: req.query.sceneId ? String(req.query.sceneId) : null,
+      filters: {
+        scope: req.query.scope ? String(req.query.scope) : undefined,
+        ownership: req.query.ownership ? String(req.query.ownership) : undefined,
+        noteType: req.query.noteType ? String(req.query.noteType) : undefined,
+        detached: req.query.detached ? String(req.query.detached) : undefined
+      }
+    });
 
-    renderFragment(res, 'partials/notes-panel.njk', { notes });
+    renderFragment(res, 'partials/notes-panel.njk', {
+      notesPanel,
+      notesPanelBootJson: serializeTemplateJson(notesPanel)
+    });
   })
 );
 

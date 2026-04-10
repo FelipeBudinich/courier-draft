@@ -45,16 +45,28 @@
         <p class="text-sm leading-7 text-ink/70">{{ t('pages.projectOverview.scriptsPlaceholder') }}</p>
       {% endif %}
     </article>
-    <article class="panel space-y-4">
-      <div class="flex items-center justify-between gap-3">
-        <h3 class="text-2xl text-ink">{{ t('pages.projectOverview.presenceHeading') }}</h3>
-        <span class="text-sm text-ink/55" data-project-connection-state>{{ t('pages.projectOverview.connecting') }}</span>
+    <div class="space-y-6">
+      <div
+        data-notes-shell
+        data-project-id="{{ project.id }}"
+        data-notes-surface="project"
+        data-notes-fragment-url="/fragments/projects/{{ project.id }}/notes-panel"
+      >
+        <div data-notes-fragment-target>
+          {% include "partials/notes-panel.njk" %}
+        </div>
       </div>
-      <div data-project-presence data-project-id="{{ project.id }}">
-        <p class="text-sm text-ink/60" data-presence-summary>{{ t('pages.projectOverview.presenceEmpty') }}</p>
-        <div class="space-y-3" data-presence-list></div>
-      </div>
-    </article>
+      <article class="panel space-y-4">
+        <div class="flex items-center justify-between gap-3">
+          <h3 class="text-2xl text-ink">{{ t('pages.projectOverview.presenceHeading') }}</h3>
+          <span class="text-sm text-ink/55" data-project-connection-state>{{ t('pages.projectOverview.connecting') }}</span>
+        </div>
+        <div data-project-presence data-project-id="{{ project.id }}">
+          <p class="text-sm text-ink/60" data-presence-summary>{{ t('pages.projectOverview.presenceEmpty') }}</p>
+          <div class="space-y-3" data-presence-list></div>
+        </div>
+      </article>
+    </div>
   </section>
   {% include "partials/activity-feed.njk" %}
 {% endblock %}

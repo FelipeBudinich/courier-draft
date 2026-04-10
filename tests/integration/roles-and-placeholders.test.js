@@ -38,29 +38,32 @@ describe('role middleware and placeholder APIs', () => {
     expect(response.text).toContain('Crear un guion');
   });
 
-  it('enforces reviewer own-note permissions before hitting placeholder handlers', async () => {
+  it('enforces reviewer own-note permissions for real note head saves', async () => {
     await loginAsUser(stack.request, seedFixtures.users.reviewer.email);
     const csrfToken = await getPageCsrfToken(stack.request, '/app');
 
     const ownNoteResponse = await stack.request
-      .patch(
-        `/api/v1/projects/${seedFixtures.project.publicId}/notes/${seedFixtures.notes.reviewer.publicId}`
+      .put(
+        `/api/v1/projects/${seedFixtures.project.publicId}/notes/${seedFixtures.notes.reviewer.publicId}/head`
       )
       .set('X-CSRF-Token', csrfToken)
       .send({
-        body: 'still placeholder'
+        baseHeadRevision: 1,
+        text: 'Reviewer can save their own note head.'
       });
 
-    expect(ownNoteResponse.status).toBe(501);
-    expect(ownNoteResponse.body.error.code).toBe('NOT_IMPLEMENTED');
+    expect(ownNoteResponse.status).toBe(200);
+    expect(ownNoteResponse.body.data.headRevision).toBe(2);
+    expect(ownNoteResponse.body.data.headText).toBe('Reviewer can save their own note head.');
 
     const otherNoteResponse = await stack.request
-      .patch(
-        `/api/v1/projects/${seedFixtures.project.publicId}/notes/${seedFixtures.notes.owner.publicId}`
+      .put(
+        `/api/v1/projects/${seedFixtures.project.publicId}/notes/${seedFixtures.notes.owner.publicId}/head`
       )
       .set('X-CSRF-Token', csrfToken)
       .send({
-        body: 'should fail first'
+        baseHeadRevision: 1,
+        text: 'should fail first'
       });
 
     expect(otherNoteResponse.status).toBe(403);

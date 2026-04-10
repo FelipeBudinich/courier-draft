@@ -6,12 +6,14 @@ import {
   requireAuth,
   requireProjectRole
 } from '../../middleware/auth.js';
+import { getNotesPanelModel } from '../../services/notes/service.js';
 import {
   getProjectActivityReadModel,
   getProjectAuditReadModel,
   getProjectMembersReadModel,
   getProjectWorkspaceReadModel
 } from '../../services/projects/service.js';
+import { serializeTemplateJson } from '../fragments/helpers.js';
 
 const router = Router();
 
@@ -20,10 +22,18 @@ router.get(
   requireAuth,
   loadProjectMembership,
   asyncRoute(async (req, res) => {
-    const workspace = await getProjectWorkspaceReadModel({
-      project: req.project,
-      membership: req.projectMembership
-    });
+    const [workspace, notesPanel] = await Promise.all([
+      getProjectWorkspaceReadModel({
+        project: req.project,
+        membership: req.projectMembership
+      }),
+      getNotesPanelModel({
+        project: req.project,
+        currentUser: req.currentUser,
+        projectRole: req.projectRole,
+        surface: 'project'
+      })
+    ]);
 
     res.render('pages/projects/workspace.njk', {
       project: workspace.project,
@@ -31,6 +41,8 @@ router.get(
       memberSummary: workspace.memberSummary,
       activity: workspace.activity,
       scripts: workspace.scripts,
+      notesPanel,
+      notesPanelBootJson: serializeTemplateJson(notesPanel),
       canManageMembers: workspace.canManageMembers,
       currentRole: req.projectRole
     });

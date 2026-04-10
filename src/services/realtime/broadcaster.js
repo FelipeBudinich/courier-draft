@@ -44,6 +44,15 @@ export const emitToSceneRoom = (scenePublicId, eventName, payload) => {
   collab.to(roomHelpers.scene(scenePublicId)).emit(eventName, payload);
 };
 
+export const emitToNoteRoom = (notePublicId, eventName, payload) => {
+  const collab = getCollabNamespace();
+  if (!collab) {
+    return;
+  }
+
+  collab.to(roomHelpers.note(notePublicId)).emit(eventName, payload);
+};
+
 export const evictUserFromProjectRooms = async ({
   userPublicId,
   projectPublicId

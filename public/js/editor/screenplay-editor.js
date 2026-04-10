@@ -44,11 +44,13 @@ export class ScreenplayEditor {
     initialDocument = null,
     readOnly = false,
     collaboration = null,
+    extraPlugins = [],
     onChange,
     onSelectionChange
   }) {
     this.mountElement = mountElement;
     this.readOnly = readOnly;
+    this.extraPlugins = extraPlugins;
     this.onChange = onChange;
     this.onSelectionChange = onSelectionChange;
     this.collaboration = collaboration;
@@ -88,7 +90,8 @@ export class ScreenplayEditor {
             'Mod-y': yRedo,
             'Mod-Shift-z': yRedo
           }),
-          keymap(baseKeymap)
+          keymap(baseKeymap),
+          ...this.extraPlugins
         ]
       });
     }
@@ -103,7 +106,8 @@ export class ScreenplayEditor {
       doc: screenplaySchema.nodeFromJSON(editorDocument),
       plugins: [
         keymap(createBlockKeyBindings(screenplaySchema)),
-        keymap(baseKeymap)
+        keymap(baseKeymap),
+        ...this.extraPlugins
       ]
     });
   }
@@ -122,7 +126,11 @@ export class ScreenplayEditor {
   };
 
   #notifySelection() {
-    this.onSelectionChange?.(getCurrentBlockType(this.view.state));
+    this.onSelectionChange?.({
+      blockType: getCurrentBlockType(this.view.state),
+      view: this.view,
+      state: this.view.state
+    });
   }
 
   getCanonicalDocument() {

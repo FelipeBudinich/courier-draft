@@ -38,7 +38,9 @@ test('owner can create and manage a script outline from the browser', async ({ p
   await page.locator('[data-scene-number-form]').getByRole('button', { name: /^save$/i }).click();
   await expect(page.locator('select[name="sceneNumberMode"]')).toHaveValue('frozen');
 
-  await page.getByRole('link', { name: /open editor/i }).click();
+  const openEditorLink = page.getByRole('link', { name: /open editor/i });
+  const editorHref = await openEditorLink.getAttribute('href');
+  await page.goto(editorHref);
   await expect(page).toHaveURL(/\/editor(\?sceneId=scn_.*)?$/);
   await expect(page.getByRole('heading', { name: /screenplay editor/i })).toBeVisible();
 });

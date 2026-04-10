@@ -1,7 +1,8 @@
 import { ZodError } from 'zod';
 
 import { badRequest, staleState } from '../../config/errors.js';
-import { Scene } from '../../models/index.js';
+import { Project, Scene } from '../../models/index.js';
+import { remapAnchoredNotesForScene } from '../notes/service.js';
 import { canonicalDocumentToPlainText } from './document-adapter.js';
 import { extractSceneDerivedFields } from './derived-fields.js';
 import { getSceneHeadDocument } from './legacy-document.js';
@@ -80,6 +81,15 @@ export const saveSceneHead = async ({
       .exec();
 
     throw staleState('A newer draft exists for this scene.', buildStaleStateDetails(latestScene));
+  }
+
+  const project = await Project.findById(savedScene.projectId).select('publicId name');
+  if (project) {
+    await remapAnchoredNotesForScene({
+      project,
+      scene: savedScene,
+      document: getSceneHeadDocument(savedScene)
+    });
   }
 
   return {

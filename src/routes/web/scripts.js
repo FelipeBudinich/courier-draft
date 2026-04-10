@@ -10,12 +10,14 @@ import {
 import { loadScript } from '../../middleware/resources.js';
 import { findSceneByPublicId } from '../../models/lookups.js';
 import { sceneSessionManager } from '../../services/collab/scene-session-manager.js';
+import { getNotesPanelModel } from '../../services/notes/service.js';
 import { getScriptDetailReadModel } from '../../services/scripts/service.js';
 import { SCENE_TEXT_BLOCK_TYPES } from '../../services/scenes/document-constants.js';
 import {
   buildSceneBootstrapPayload,
   resolveEditorSceneSelection
 } from '../../services/scenes/scene-bootstrap.js';
+import { serializeTemplateJson } from '../fragments/helpers.js';
 
 const router = Router();
 
@@ -56,12 +58,22 @@ router.get(
       script: req.script,
       projectRole: req.projectRole
     });
+    const notesPanel = await getNotesPanelModel({
+      project: req.project,
+      script: req.script,
+      outlineNodes: detail.outline,
+      currentUser: req.currentUser,
+      projectRole: req.projectRole,
+      surface: 'script'
+    });
 
     res.render('pages/projects/script-show.njk', {
       project: serializeProjectFrame(req.project),
       script: detail.script,
       outlineNodes: detail.outline,
       activity: detail.activity,
+      notesPanel,
+      notesPanelBootJson: serializeTemplateJson(notesPanel),
       permissions: detail.permissions,
       currentRole: req.projectRole
     });
@@ -91,6 +103,7 @@ router.get(
 
     let activeScene = null;
     let editorBootJson = null;
+    let notesPanel = null;
 
     if (selection.activeSceneId) {
       activeScene = await findSceneByPublicId({
@@ -135,6 +148,16 @@ router.get(
       );
     }
 
+    notesPanel = await getNotesPanelModel({
+      project: req.project,
+      script: req.script,
+      outlineNodes: detail.outline,
+      currentUser: req.currentUser,
+      projectRole: req.projectRole,
+      surface: 'editor',
+      sceneId: selection.activeSceneId
+    });
+
     res.render('pages/projects/script-editor.njk', {
       project: serializeProjectFrame(req.project),
       script: detail.script,
@@ -145,6 +168,8 @@ router.get(
       activeSceneId: selection.activeSceneId,
       activeScene,
       editorBootJson,
+      notesPanel,
+      notesPanelBootJson: serializeTemplateJson(notesPanel),
       blockTypeOptions: SCENE_TEXT_BLOCK_TYPES
     });
   })

@@ -148,7 +148,7 @@ export const requireNoteMutationAccess = (req, _res, next) => {
   const canEdit = roleHelpers.canEditNote(
     req.projectRole,
     req.currentUser._id,
-    req.note.authorId
+    req.note.authorUserId
   );
 
   if (!canEdit) {

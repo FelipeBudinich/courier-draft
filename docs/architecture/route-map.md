@@ -212,6 +212,7 @@ These routes return JSON and should be treated as the main durable command/read 
 | GET | `/api/v1/projects/:projectId/notes/:noteId` | Member | Note detail |
 | PATCH | `/api/v1/projects/:projectId/notes/:noteId` | Member* | Update note |
 | DELETE | `/api/v1/projects/:projectId/notes/:noteId` | Member* | Delete note |
+| PUT | `/api/v1/projects/:projectId/notes/:noteId/head` | Member* | Persist the current note head draft |
 | GET | `/api/v1/projects/:projectId/notes/:noteId/versions` | Member | Note version list |
 | POST | `/api/v1/projects/:projectId/notes/:noteId/versions/major-save` | Member* | Create note major save |
 | POST | `/api/v1/projects/:projectId/notes/:noteId/versions/:versionId/restore` | Member* | Restore note version |

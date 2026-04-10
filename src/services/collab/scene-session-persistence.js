@@ -1,4 +1,5 @@
-import { Scene } from '../../models/index.js';
+import { Project, Scene } from '../../models/index.js';
+import { remapAnchoredNotesForScene } from '../notes/service.js';
 import { canonicalDocumentToPlainText } from '../scenes/document-adapter.js';
 import { extractSceneDerivedFields } from '../scenes/derived-fields.js';
 import { normalizeCanonicalSceneDocument } from '../scenes/document-normalizer.js';
@@ -35,6 +36,15 @@ export const persistSceneSessionHead = async ({
       new: true
     }
   ).exec();
+
+  const project = await Project.findById(savedScene.projectId).select('publicId name');
+  if (project) {
+    await remapAnchoredNotesForScene({
+      project,
+      scene: savedScene,
+      document: normalizedDocument
+    });
+  }
 
   return {
     sceneId: savedScene.publicId,

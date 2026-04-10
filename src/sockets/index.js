@@ -11,6 +11,7 @@ import {
 } from '../models/lookups.js';
 import { roleHelpers } from '../middleware/auth.js';
 import { hasCompletedOnboarding } from '../services/auth/service.js';
+import { noteSessionManager } from '../services/collab/note-session-manager.js';
 import { sceneSessionManager } from '../services/collab/scene-session-manager.js';
 import { registerRealtimeServer } from '../services/realtime/broadcaster.js';
 import { roomHelpers } from './rooms.js';
@@ -194,6 +195,7 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
     socket.data.joinedProjectIds = new Set();
     socket.data.projectScopedRooms = new Map();
     socket.data.sceneContexts = new Map();
+    socket.data.noteContexts = new Map();
     socket.data.activeSceneContext = null;
     socket.join(roomHelpers.user(user.publicId));
     next();
@@ -235,6 +237,24 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
         emitPresenceViewChanged(collab, context.projectId, updatedPresence);
         socket.data.activeSceneContext = null;
       }
+    };
+
+    const leaveNoteRoom = async (noteId) => {
+      const awarenessRemoval = await noteSessionManager.leave({
+        noteId,
+        socketId: socket.id
+      });
+
+      if (awarenessRemoval) {
+        collab.to(roomHelpers.note(noteId)).emit('note:yjs-awareness', {
+          noteId,
+          payload: Buffer.from(awarenessRemoval)
+        });
+      }
+
+      socket.leave(roomHelpers.note(noteId));
+      socket.data.projectScopedRooms.delete(roomHelpers.note(noteId));
+      socket.data.noteContexts.delete(noteId);
     };
 
     socket.on('project:join', async (payload, ack) => {
@@ -288,6 +308,14 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
           }
 
           await leaveSceneRoom(sceneId);
+        }
+
+        for (const [noteId, context] of socket.data.noteContexts.entries()) {
+          if (context.projectId !== projectId) {
+            continue;
+          }
+
+          await leaveNoteRoom(noteId);
         }
 
         socket.leave(roomHelpers.project(projectId));
@@ -489,15 +517,29 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
           return ack?.(ackError('NOT_FOUND', 'Note not found.'));
         }
 
+        const canEdit = roleHelpers.canEditNote(
+          membership.role,
+          user._id,
+          note.authorUserId
+        );
+        const session = await noteSessionManager.join({
+          note,
+          socketId: socket.id,
+          user,
+          canEdit
+        });
+
         socket.join(roomHelpers.note(noteId));
         socket.data.projectScopedRooms.set(roomHelpers.note(noteId), projectId);
+        socket.data.noteContexts.set(noteId, {
+          projectId
+        });
         const data = {
           noteId,
-          canEdit: roleHelpers.canEditNote(membership.role, user._id, note.authorId),
-          latestMajorVersionId: note.latestMajorVersionId
-            ? String(note.latestMajorVersionId)
-            : null,
-          headUpdatedAt: note.headUpdatedAt.toISOString(),
+          canEdit,
+          latestMajorVersionId: session.latestMajorVersionId,
+          headUpdatedAt:
+            session.lastPersistedAt?.toISOString?.() ?? new Date().toISOString(),
           isDetached: note.isDetached
         };
 
@@ -508,8 +550,7 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
 
     socket.on('note:leave', async (payload, ack) => {
       await withValidation(leaveNoteSchema, payload, ack, async ({ noteId }) => {
-        socket.leave(roomHelpers.note(noteId));
-        socket.data.projectScopedRooms.delete(roomHelpers.note(noteId));
+        await leaveNoteRoom(noteId);
         ack?.(ackOk({ noteId }));
       });
     });
@@ -683,26 +724,156 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
       });
     });
 
-    const registerPlaceholderEvent = (eventName, schema) => {
-      socket.on(eventName, async (payload, ack) => {
-        await withValidation(schema, payload, ack, async () => {
-          ack?.(
-            ackError('SERVER_ERROR', 'Not implemented in foundation PR', {
-              event: eventName
-            })
-          );
-        });
-      });
-    };
+    socket.on('note:yjs-sync', async (payload, ack) => {
+      await withValidation(yjsNoteSchema, payload, ack, async ({ noteId, payload: rawPayload }) => {
+        const session = noteSessionManager.get(noteId);
 
-    registerPlaceholderEvent('note:yjs-sync', yjsNoteSchema);
-    registerPlaceholderEvent('note:yjs-update', yjsNoteSchema);
-    registerPlaceholderEvent('note:yjs-awareness', yjsNoteSchema);
+        if (!session || !socket.data.noteContexts.has(noteId)) {
+          return ack?.(
+            ackError('FORBIDDEN', 'Join the note room before syncing.')
+          );
+        }
+
+        try {
+          const reply = session.buildSyncReply(toUint8Array(rawPayload), {
+            type: 'note:yjs-sync',
+            socketId: socket.id
+          });
+
+          if (reply) {
+            socket.emit('note:yjs-sync', {
+              noteId,
+              payload: Buffer.from(reply)
+            });
+          }
+
+          ack?.(ackOk({ noteId }));
+        } catch (error) {
+          logger.warn(
+            {
+              socketId: socket.id,
+              noteId,
+              error
+            },
+            'Invalid note Yjs sync payload.'
+          );
+          emitAsyncServerError(
+            socket,
+            'INVALID_PAYLOAD',
+            'Note sync payload was invalid.',
+            { noteId }
+          );
+          ack?.(ackError('INVALID_PAYLOAD', 'Note sync payload was invalid.'));
+        }
+      });
+    });
+
+    socket.on('note:yjs-update', async (payload, ack) => {
+      await withValidation(yjsNoteSchema, payload, ack, async ({ noteId, payload: rawPayload }) => {
+        const session = noteSessionManager.get(noteId);
+        const member = session?.getMember(socket.id);
+
+        if (!session || !member) {
+          return ack?.(
+            ackError('FORBIDDEN', 'Join the note room before sending updates.')
+          );
+        }
+
+        if (!member.canEdit) {
+          emitAsyncServerError(
+            socket,
+            'FORBIDDEN',
+            'You do not have permission to edit this note.',
+            { noteId }
+          );
+          return ack?.(
+            ackError('FORBIDDEN', 'You do not have permission to edit this note.')
+          );
+        }
+
+        try {
+          const binaryPayload = toUint8Array(rawPayload);
+          session.applyTextUpdate(binaryPayload, {
+            socketId: socket.id,
+            actor: user
+          });
+
+          socket.to(roomHelpers.note(noteId)).emit('note:yjs-update', {
+            noteId,
+            payload: Buffer.from(binaryPayload)
+          });
+
+          ack?.(ackOk({ noteId }));
+        } catch (error) {
+          logger.warn(
+            {
+              socketId: socket.id,
+              noteId,
+              error
+            },
+            'Invalid note Yjs update payload.'
+          );
+          emitAsyncServerError(
+            socket,
+            'INVALID_PAYLOAD',
+            'Note update payload was invalid.',
+            { noteId }
+          );
+          ack?.(ackError('INVALID_PAYLOAD', 'Note update payload was invalid.'));
+        }
+      });
+    });
+
+    socket.on('note:yjs-awareness', async (payload, ack) => {
+      await withValidation(yjsNoteSchema, payload, ack, async ({ noteId, payload: rawPayload }) => {
+        const session = noteSessionManager.get(noteId);
+
+        if (!session || !socket.data.noteContexts.has(noteId)) {
+          return ack?.(
+            ackError('FORBIDDEN', 'Join the note room before sending awareness.')
+          );
+        }
+
+        try {
+          const binaryPayload = toUint8Array(rawPayload);
+          session.applyAwarenessUpdate(binaryPayload, {
+            socketId: socket.id
+          });
+
+          socket.to(roomHelpers.note(noteId)).emit('note:yjs-awareness', {
+            noteId,
+            payload: Buffer.from(binaryPayload)
+          });
+
+          ack?.(ackOk({ noteId }));
+        } catch (error) {
+          logger.warn(
+            {
+              socketId: socket.id,
+              noteId,
+              error
+            },
+            'Invalid note Yjs awareness payload.'
+          );
+          emitAsyncServerError(
+            socket,
+            'INVALID_PAYLOAD',
+            'Note awareness payload was invalid.',
+            { noteId }
+          );
+          ack?.(ackError('INVALID_PAYLOAD', 'Note awareness payload was invalid.'));
+        }
+      });
+    });
 
     socket.on('disconnect', () => {
       void (async () => {
         for (const sceneId of [...socket.data.sceneContexts.keys()]) {
           await leaveSceneRoom(sceneId);
+        }
+
+        for (const noteId of [...socket.data.noteContexts.keys()]) {
+          await leaveNoteRoom(noteId);
         }
 
         const results = presenceStore.leaveAll(socket.id, user.publicId);
