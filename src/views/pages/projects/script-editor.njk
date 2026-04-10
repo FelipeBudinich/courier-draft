@@ -18,7 +18,7 @@
       <div class="flex flex-wrap items-center gap-3">
         <span class="badge">{{ t('shared.badges.' + currentRole) }}</span>
         <span class="badge">{{ script.sceneNumberMode | upper }}</span>
-        <span class="text-sm text-ink/55" data-script-connection-state>{{ t('pages.projectOverview.connecting') }}</span>
+        <span class="text-sm text-ink/55" data-script-connection-state>{{ t('pages.editor.connectionStates.connecting') }}</span>
       </div>
       <div class="mt-4 flex flex-wrap items-start justify-between gap-4">
         <div class="max-w-3xl space-y-3">
@@ -75,6 +75,17 @@
           {% endif %}
         </article>
 
+        {% if activeScene and editorBootJson %}
+          <article class="panel space-y-4">
+            <div class="space-y-1">
+              <h3 class="text-xl text-ink">{{ t('pages.editor.collaboratorsHeading') }}</h3>
+              <p class="text-sm text-ink/60">{{ t('pages.editor.collaboratorsHelp') }}</p>
+            </div>
+            <p class="text-sm text-ink/60" data-collaborator-summary>{{ t('pages.editor.collaboratorsEmpty') }}</p>
+            <div class="space-y-3" data-collaborator-list></div>
+          </article>
+        {% endif %}
+
         <div data-outline-fragment-target>
           {% set surface = 'editor' %}
           {% include "partials/outline-tree.njk" %}
@@ -103,13 +114,13 @@
                 <p class="text-sm text-ink/60">{{ activeScene.title }}</p>
               </div>
 
-              <div class="rounded-3xl border border-ink/10 bg-mist/70 px-4 py-3" data-save-status-panel data-save-state="{% if permissions.canEdit %}saved{% else %}readOnly{% endif %}">
+              <div class="rounded-3xl border border-ink/10 bg-mist/70 px-4 py-3" data-save-status-panel data-save-state="{% if permissions.canEdit %}persisted{% else %}readOnly{% endif %}">
                 <div class="flex flex-wrap items-center gap-2">
                   <span class="badge" data-save-state-badge>
                     {% if permissions.canEdit %}
-                      {{ t('pages.editor.saveStates.saved') }}
+                      {{ t('pages.editor.persistenceStates.persisted') }}
                     {% else %}
-                      {{ t('pages.editor.saveStates.readOnly') }}
+                      {{ t('pages.editor.persistenceStates.readOnly') }}
                     {% endif %}
                   </span>
                   <button class="btn-secondary" type="button" data-reload-latest hidden>{{ t('pages.editor.reloadLatest') }}</button>
@@ -137,9 +148,6 @@
               </label>
               <button class="btn-secondary" type="button" data-insert-dual-dialogue {% if not permissions.canEdit %}disabled{% endif %}>
                 {{ t('pages.editor.insertDualDialogue') }}
-              </button>
-              <button class="btn-primary" type="button" data-save-now {% if not permissions.canEdit %}disabled{% endif %}>
-                {{ t('pages.editor.saveNow') }}
               </button>
             </div>
           </article>

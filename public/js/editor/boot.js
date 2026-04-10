@@ -1,7 +1,8 @@
-import { csrfFetch } from '../csrf-fetch.js';
-import { createAutosaveController } from './autosave.js';
+import { createCollabClient } from '../collab-client.js';
+import { createCollabStateManager } from './collab-state.js';
 import { createSaveStateUI } from './save-state-ui.js';
 import { createSceneLoader } from './scene-loader.js';
+import { SceneRealtimeProvider } from './realtime-provider.js';
 import { ScreenplayEditor } from './screenplay-editor.js';
 
 const createApiError = (payload, fallbackMessage) => {
@@ -10,6 +11,18 @@ const createApiError = (payload, fallbackMessage) => {
   error.details = payload?.error?.details ?? null;
   return error;
 };
+
+const emitWithAck = (socket, eventName, payload) =>
+  new Promise((resolve, reject) => {
+    socket.emit(eventName, payload, (ack) => {
+      if (ack?.ok) {
+        resolve(ack.data);
+        return;
+      }
+
+      reject(createApiError(ack, `Socket event ${eventName} failed.`));
+    });
+  });
 
 const readBootPayload = () => {
   const payloadElement = document.querySelector('[data-editor-boot]');
@@ -20,9 +33,6 @@ const readBootPayload = () => {
 
   return JSON.parse(payloadElement.textContent);
 };
-
-const buildSaveUrl = (projectId, scriptId, sceneId) =>
-  `/api/v1/projects/${projectId}/scripts/${scriptId}/scenes/${sceneId}/head`;
 
 const buildOutlineFragmentUrl = (projectId, scriptId, sceneId) => {
   const params = new URLSearchParams({
@@ -64,12 +74,60 @@ const syncOutlineFragmentUrl = (projectId, scriptId, sceneId) => {
   shell.dataset.outlineFragmentUrl = buildOutlineFragmentUrl(projectId, scriptId, sceneId);
 };
 
-const setSceneMeta = (elements, bootstrap) => {
-  elements.sceneTitle.textContent =
-    bootstrap.scene.cachedSlugline ?? bootstrap.scene.title;
+const getSceneDisplayTitle = (bootstrap, documentValue = null) => {
+  const slugline = documentValue?.blocks?.find(
+    (block) => block.type === 'slugline' && block.text?.trim()
+  );
+
+  return (
+    slugline?.text ??
+    bootstrap.scene.cachedSlugline ??
+    bootstrap.scene.title
+  );
+};
+
+const setSceneMeta = (elements, bootstrap, documentValue = null, canEdit = false) => {
+  elements.sceneTitle.textContent = getSceneDisplayTitle(bootstrap, documentValue);
   elements.sceneNumber.textContent =
     bootstrap.scene.displayedSceneNumber ?? '—';
-  elements.readOnlyBadge.hidden = bootstrap.capabilities.canEdit;
+  elements.readOnlyBadge.hidden = canEdit;
+};
+
+const renderCollaborators = (elements, activeSceneId, collaborators, currentUserId) => {
+  if (!elements.collaboratorSummary || !elements.collaboratorList) {
+    return;
+  }
+
+  const sceneUsers = [...collaborators.values()].filter(
+    (entry) =>
+      entry.userId !== currentUserId &&
+      entry.view?.sceneId === activeSceneId
+  );
+
+  if (!sceneUsers.length) {
+    elements.collaboratorSummary.textContent = 'No collaborators are currently in this scene.';
+    elements.collaboratorList.innerHTML = '';
+    return;
+  }
+
+  elements.collaboratorSummary.textContent = `${sceneUsers.length} collaborator${sceneUsers.length === 1 ? '' : 's'} in this scene.`;
+  elements.collaboratorList.innerHTML = sceneUsers
+    .map(
+      (entry) => `
+        <article class="rounded-2xl border border-ink/10 bg-mist/50 px-3 py-3">
+          <p class="font-semibold text-ink">${entry.displayName ?? entry.userId}</p>
+          <p class="text-xs uppercase tracking-[0.18em] text-ink/45">${entry.view.mode}</p>
+        </article>
+      `
+    )
+    .join('');
+};
+
+const setEditorControls = ({ elements, canEdit, connected }) => {
+  const enabled = canEdit && connected;
+
+  elements.blockTypeSelect.disabled = !enabled;
+  elements.dualDialogueButton.disabled = !enabled;
 };
 
 export const initEditorPage = () => {
@@ -97,136 +155,310 @@ export const initEditorPage = () => {
     readOnlyBadge: page.querySelector('[data-read-only-badge]'),
     blockTypeSelect: page.querySelector('[data-block-type-select]'),
     dualDialogueButton: page.querySelector('[data-insert-dual-dialogue]'),
-    saveButton: page.querySelector('[data-save-now]')
+    collaboratorSummary: page.querySelector('[data-collaborator-summary]'),
+    collaboratorList: page.querySelector('[data-collaborator-list]'),
+    connectionState: document.querySelector('[data-script-connection-state]')
   };
+
   const state = {
     bootstrap: boot,
-    headRevision: boot.scene.headRevision,
     currentSceneId: boot.scene.publicId,
-    canEdit: boot.capabilities.canEdit
+    runtime: null,
+    collaborators: new Map(),
+    needsResync: false
   };
+  const socket = createCollabClient({
+    namespace: boot.collaboration?.namespace ?? '/collab'
+  });
+  const sceneLoader = createSceneLoader({
+    projectId: boot.project.publicId,
+    scriptId: boot.script.publicId
+  });
   const saveStateUi = createSaveStateUI({
     root: elements.statusPanel,
     statusElement: elements.saveState,
     timestampElement: elements.lastSaved,
     messageElement: elements.message,
     reloadButton: elements.reloadButton,
-    labels: boot.ui.saveStates,
-    locale: document.documentElement.lang || 'en'
+    labels: boot.ui.persistenceStates,
+    locale: document.documentElement.lang || 'en',
+    emptyLabel: elements.lastSaved.textContent.trim() || 'Not saved yet'
   });
-  const editor = new ScreenplayEditor({
-    mountElement: elements.canvas,
-    initialDocument: boot.document,
-    readOnly: !state.canEdit,
-    onChange(documentValue) {
-      autosave.markDirty({
-        document: documentValue
-      });
-    },
-    onSelectionChange(blockType) {
-      if (elements.blockTypeSelect && blockType) {
-        elements.blockTypeSelect.value = blockType;
-      }
-    }
+  const collabState = createCollabStateManager({
+    connectionElement: elements.connectionState,
+    connectionLabels: boot.ui.connectionStates,
+    saveStateUi
   });
 
-  const saveSceneHead = async (payload, reason) => {
-    const response = await csrfFetch(
-      buildSaveUrl(boot.project.publicId, boot.script.publicId, state.currentSceneId),
-      {
-        method: 'PUT',
-        keepalive: reason === 'pagehide' || reason === 'beforeunload',
-        body: JSON.stringify({
-          baseHeadRevision: state.headRevision,
-          document: payload.document
-        })
-      }
+  const renderPresence = () =>
+    renderCollaborators(
+      elements,
+      state.currentSceneId,
+      state.collaborators,
+      state.bootstrap.currentUser?.id
     );
-    const responsePayload = await response.json();
 
-    if (!response.ok) {
-      throw createApiError(responsePayload, 'Failed to save scene draft.');
-    }
-
-    state.headRevision = responsePayload.data.headRevision;
-    return responsePayload.data;
-  };
-
-  const autosave = createAutosaveController({
-    delayMs: 2000,
-    save: saveSceneHead,
-    onStateChange(nextState) {
-      saveStateUi.update(nextState);
-    }
-  });
-
-  const applyBootstrap = (nextBootstrap) => {
+  const applyBootstrapMeta = (nextBootstrap, documentValue = null, canEdit = false) => {
     state.bootstrap = nextBootstrap;
-    state.headRevision = nextBootstrap.scene.headRevision;
     state.currentSceneId = nextBootstrap.scene.publicId;
-    state.canEdit = nextBootstrap.capabilities.canEdit;
-    editor.setReadOnly(!state.canEdit);
-    editor.replaceDocument(nextBootstrap.document);
-    autosave.reset({
-      lastSavedAt: nextBootstrap.scene.headUpdatedAt,
-      readOnly: !state.canEdit
-    });
-    elements.blockTypeSelect.disabled = !state.canEdit;
-    elements.dualDialogueButton.disabled = !state.canEdit;
-    elements.saveButton.disabled = !state.canEdit;
-    setSceneMeta(elements, nextBootstrap);
+    setSceneMeta(elements, nextBootstrap, documentValue, canEdit);
     syncSceneSelectionUi(nextBootstrap.scene.publicId);
     syncOutlineFragmentUrl(
       nextBootstrap.project.publicId,
       nextBootstrap.script.publicId,
       nextBootstrap.scene.publicId
     );
+    renderPresence();
   };
 
-  const sceneLoader = createSceneLoader({
-    projectId: boot.project.publicId,
-    scriptId: boot.script.publicId,
-    async onBeforeLoad(nextSceneId) {
-      if (nextSceneId === state.currentSceneId) {
-        return;
-      }
+  const joinBaseRooms = async () => {
+    await emitWithAck(socket, 'project:join', {
+      projectId: boot.project.publicId
+    });
+    await emitWithAck(socket, 'script:join', {
+      projectId: boot.project.publicId,
+      scriptId: boot.script.publicId
+    });
+  };
 
-      if (autosave.getState().status === 'stale') {
-        throw createApiError(
-          {
-            error: {
-              code: 'STALE_STATE',
-              message: 'Reload the latest scene head before leaving this scene.'
-            }
-          },
-          'Reload the latest scene head before leaving this scene.'
-        );
-      }
+  const mountScene = async (
+    nextBootstrap,
+    { historyMode = 'push', leavePreviousScene = true } = {}
+  ) => {
+    let previousRuntime = state.runtime;
+    const isSameSceneResync =
+      previousRuntime &&
+      previousRuntime.provider.sceneId === nextBootstrap.scene.publicId &&
+      !leavePreviousScene;
 
-      if (autosave.hasPendingWork()) {
-        await autosave.flush('scene-switch');
+    if (isSameSceneResync) {
+      previousRuntime.editor.destroy();
+      await previousRuntime.provider.dispose({
+        leaveScene: false
+      });
+      previousRuntime = null;
+      state.runtime = null;
+    }
+
+    const nextProvider = new SceneRealtimeProvider({
+      socket,
+      projectId: nextBootstrap.project.publicId,
+      scriptId: nextBootstrap.script.publicId,
+      sceneId: nextBootstrap.scene.publicId,
+      currentUser: nextBootstrap.currentUser,
+      canEdit: nextBootstrap.capabilities.canEdit,
+      onLocalChange() {
+        collabState.markUnsaved();
+      },
+      onPersisted(persistedAt) {
+        collabState.markPersisted(persistedAt);
+      },
+      onPersistenceError(message) {
+        collabState.markFailed(message);
+      },
+      onServerError(message) {
+        collabState.showMessage(message);
       }
-    },
-    onAfterLoad(nextBootstrap) {
-      applyBootstrap(nextBootstrap);
+    });
+
+    try {
+      await nextProvider.connect();
+    } catch (error) {
+      await nextProvider.dispose({
+        leaveScene: true
+      });
+      throw error;
+    }
+
+    previousRuntime?.editor?.destroy();
+
+    const nextEditor = new ScreenplayEditor({
+      mountElement: elements.canvas,
+      readOnly: !nextProvider.canEdit,
+      collaboration: {
+        xmlFragment: nextProvider.getXmlFragment(),
+        awareness: nextProvider.awareness
+      },
+      onChange(documentValue) {
+        setSceneMeta(elements, nextBootstrap, documentValue, nextProvider.canEdit);
+      },
+      onSelectionChange(blockType) {
+        if (elements.blockTypeSelect && blockType) {
+          elements.blockTypeSelect.value = blockType;
+        }
+      }
+    });
+
+    state.runtime = {
+      provider: nextProvider,
+      editor: nextEditor
+    };
+
+    applyBootstrapMeta(
+      nextBootstrap,
+      nextEditor.getCanonicalDocument(),
+      nextProvider.canEdit
+    );
+    collabState.clearMessage();
+    collabState.setReadOnly(!nextProvider.canEdit, nextBootstrap.scene.headUpdatedAt);
+    if (nextProvider.canEdit) {
+      collabState.markPersisted(nextBootstrap.scene.headUpdatedAt);
+    }
+    setEditorControls({
+      elements,
+      canEdit: nextProvider.canEdit,
+      connected: socket.connected
+    });
+
+    const nextUrl = sceneLoader.buildEditorUrl(nextBootstrap.scene.publicId);
+
+    if (historyMode === 'replace') {
+      window.history.replaceState(
+        { sceneId: nextBootstrap.scene.publicId },
+        '',
+        nextUrl
+      );
+    } else {
+      window.history.pushState(
+        { sceneId: nextBootstrap.scene.publicId },
+        '',
+        nextUrl
+      );
+    }
+
+    if (previousRuntime) {
+      await previousRuntime.provider.dispose({
+        leaveScene: leavePreviousScene
+      });
+    }
+  };
+
+  const navigateToScene = async (sceneId, historyMode = 'push') => {
+    if (sceneId === state.currentSceneId) {
+      return;
+    }
+
+    if (!socket.connected) {
+      throw new Error('Reconnect before switching scenes.');
+    }
+
+    const bootstrapPayload = await sceneLoader.fetchBootstrap(sceneId);
+    await mountScene(bootstrapPayload, {
+      historyMode,
+      leavePreviousScene: true
+    });
+  };
+
+  const reloadCurrentScene = async () => {
+    if (!socket.connected) {
+      return;
+    }
+
+    const previousRuntime = state.runtime;
+    state.runtime = null;
+
+    if (previousRuntime) {
+      previousRuntime.editor.destroy();
+      await previousRuntime.provider.dispose({
+        leaveScene: true
+      });
+    }
+
+    const bootstrapPayload = await sceneLoader.fetchBootstrap(state.currentSceneId);
+    await mountScene(bootstrapPayload, {
+      historyMode: 'replace',
+      leavePreviousScene: false
+    });
+  };
+
+  socket.on('presence:snapshot', ({ users }) => {
+    state.collaborators.clear();
+    users.forEach((entry) => {
+      state.collaborators.set(entry.userId, entry);
+    });
+    renderPresence();
+  });
+
+  socket.on('presence:user-joined', (entry) => {
+    state.collaborators.set(entry.userId, entry);
+    renderPresence();
+  });
+
+  socket.on('presence:user-left', ({ userId }) => {
+    state.collaborators.delete(userId);
+    renderPresence();
+  });
+
+  socket.on('presence:view-changed', (payload) => {
+    const existing = state.collaborators.get(payload.userId) ?? {
+      userId: payload.userId,
+      displayName: payload.userId,
+      username: null,
+      avatarUrl: ''
+    };
+
+    existing.view = {
+      projectId: payload.projectId,
+      scriptId: payload.scriptId,
+      sceneId: payload.sceneId,
+      noteId: payload.noteId,
+      mode: payload.mode
+    };
+    state.collaborators.set(payload.userId, existing);
+    renderPresence();
+  });
+
+  socket.on('project:access-revoked', ({ projectId }) => {
+    if (projectId === boot.project.publicId) {
+      window.location.assign('/app');
     }
   });
 
-  applyBootstrap(boot);
-  window.history.replaceState(
-    { sceneId: state.currentSceneId },
-    '',
-    sceneLoader.buildEditorUrl(state.currentSceneId)
-  );
+  socket.on('connect', async () => {
+    collabState.setConnectionStatus('connected');
 
-  const navigateToScene = async (sceneId, historyMode = 'push') => {
     try {
-      await sceneLoader.loadScene(sceneId, { historyMode });
+      await joinBaseRooms();
+
+      if (!state.runtime) {
+        await mountScene(state.bootstrap, {
+          historyMode: 'replace',
+          leavePreviousScene: false
+        });
+        return;
+      }
+
+      if (state.needsResync) {
+        const bootstrapPayload = await sceneLoader.fetchBootstrap(state.currentSceneId);
+        await mountScene(bootstrapPayload, {
+          historyMode: 'replace',
+          leavePreviousScene: false
+        });
+      }
     } catch (error) {
-      saveStateUi.showNavigationError(error.message);
-      throw error;
+      collabState.setConnectionStatus('unavailable');
+      collabState.showMessage(error.message);
+    } finally {
+      state.needsResync = false;
     }
-  };
+  });
+
+  socket.on('disconnect', () => {
+    state.needsResync = true;
+    collabState.setConnectionStatus('reconnecting');
+    collabState.markReconnecting('Realtime connection lost. Reconnecting…');
+    state.runtime?.editor?.setReadOnly(true);
+    setEditorControls({
+      elements,
+      canEdit: state.runtime?.provider?.canEdit ?? boot.capabilities.canEdit,
+      connected: false
+    });
+  });
+
+  socket.on('connect_error', () => {
+    collabState.setConnectionStatus('unavailable');
+    collabState.showMessage('Realtime connection is unavailable.');
+  });
 
   page.addEventListener('click', (event) => {
     const toggleButton = event.target.closest('[data-outline-toggle]');
@@ -257,41 +489,40 @@ export const initEditorPage = () => {
     }
 
     event.preventDefault();
-    void navigateToScene(sceneLink.dataset.sceneLink);
+    void navigateToScene(sceneLink.dataset.sceneLink).catch((error) => {
+      collabState.showMessage(error.message);
+    });
   });
 
   document
     .querySelector('[data-scene-select]')
     ?.addEventListener('change', (event) => {
-      void navigateToScene(event.target.value);
+      void navigateToScene(event.target.value).catch((error) => {
+        collabState.showMessage(error.message);
+      });
     });
 
   elements.blockTypeSelect.addEventListener('change', (event) => {
-    if (!state.canEdit) {
+    if (!state.runtime?.provider?.canEdit || !socket.connected) {
       return;
     }
 
-    editor.setCurrentBlockType(event.target.value);
-    editor.focus();
+    state.runtime.editor.setCurrentBlockType(event.target.value);
+    state.runtime.editor.focus();
   });
 
   elements.dualDialogueButton.addEventListener('click', () => {
-    if (!state.canEdit) {
+    if (!state.runtime?.provider?.canEdit || !socket.connected) {
       return;
     }
 
-    editor.insertDualDialogue();
-    editor.focus();
-  });
-
-  elements.saveButton.addEventListener('click', () => {
-    void autosave.flush('manual');
+    state.runtime.editor.insertDualDialogue();
+    state.runtime.editor.focus();
   });
 
   elements.reloadButton.addEventListener('click', () => {
-    void sceneLoader.loadScene(state.currentSceneId, {
-      historyMode: 'replace',
-      skipBeforeLoad: true
+    void reloadCurrentScene().catch((error) => {
+      collabState.showMessage(error.message);
     });
   });
 
@@ -302,30 +533,22 @@ export const initEditorPage = () => {
       return;
     }
 
-    void sceneLoader.loadScene(nextSceneId, {
-      historyMode: 'replace'
+    void navigateToScene(nextSceneId, 'replace').catch((error) => {
+      collabState.showMessage(error.message);
     });
   });
 
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden && autosave.hasPendingWork()) {
-      void autosave.flush('pagehide').catch(() => {});
-    }
-  });
-
-  window.addEventListener('pagehide', () => {
-    if (autosave.hasPendingWork()) {
-      void autosave.flush('pagehide').catch(() => {});
-    }
-  });
-
-  window.addEventListener('beforeunload', (event) => {
-    if (!autosave.hasPendingWork()) {
-      return;
-    }
-
-    void autosave.flush('beforeunload').catch(() => {});
-    event.preventDefault();
-    event.returnValue = '';
+  window.addEventListener('beforeunload', () => {
+    void state.runtime?.provider?.dispose({
+      leaveScene: false
+    });
+    socket.emit('script:leave', {
+      projectId: boot.project.publicId,
+      scriptId: boot.script.publicId
+    });
+    socket.emit('project:leave', {
+      projectId: boot.project.publicId
+    });
+    socket.close();
   });
 };

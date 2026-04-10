@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { createAutosaveController } from '../../public/js/editor/autosave.js';
 
 describe('editor autosave controller', () => {

@@ -7,6 +7,7 @@ import supertest from 'supertest';
 import { createApp } from '../../src/app.js';
 import { connectToMongo, disconnectFromMongo } from '../../src/config/db.js';
 import { seedFixtures, seedDevelopmentData } from '../../src/models/seed.js';
+import { sceneSessionManager } from '../../src/services/collab/scene-session-manager.js';
 import { createRealtimeServer } from '../../src/sockets/index.js';
 import { presenceStore } from '../../src/sockets/presence-store.js';
 
@@ -68,6 +69,7 @@ export const startTestStack = async ({ seed = true } = {}) => {
       io.close();
       await new Promise((resolve) => httpServer.close(resolve));
       presenceStore.clear();
+      sceneSessionManager.clear();
       await disconnectFromMongo();
       await mongoServer.stop();
     }

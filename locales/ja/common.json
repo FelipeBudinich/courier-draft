@@ -235,6 +235,9 @@
       "sceneSelectLabel": "現在のシーン",
       "noScenesHelp": "ここで書き始めるにはアウトラインでシーンを作成してください。",
       "activeSceneLabel": "現在のシーン",
+      "collaboratorsHeading": "共同編集者",
+      "collaboratorsHelp": "このシーンのライブ参加状況は、参加・退出や編集/閲覧の切り替えに合わせて更新されます。",
+      "collaboratorsEmpty": "現在このシーンに共同編集者はいません。",
       "reloadLatest": "最新を再読込",
       "lastSavedLabel": "最終保存",
       "notSavedYet": "まだ保存されていません",
@@ -252,6 +255,18 @@
         "failed": "保存失敗",
         "readOnly": "読み取り専用",
         "stale": "古いローカルコピー"
+      },
+      "persistenceStates": {
+        "persisted": "反映済み",
+        "unsaved": "未反映の共同編集変更",
+        "failed": "永続化に失敗",
+        "readOnly": "読み取り専用"
+      },
+      "connectionStates": {
+        "connecting": "接続中",
+        "connected": "接続済み",
+        "reconnecting": "再接続中…",
+        "unavailable": "利用不可"
       },
       "blockTypes": {
         "slugline": "スラッグライン",

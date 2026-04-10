@@ -11,6 +11,7 @@ import {
 } from '../models/lookups.js';
 import { roleHelpers } from '../middleware/auth.js';
 import { hasCompletedOnboarding } from '../services/auth/service.js';
+import { sceneSessionManager } from '../services/collab/scene-session-manager.js';
 import { registerRealtimeServer } from '../services/realtime/broadcaster.js';
 import { roomHelpers } from './rooms.js';
 import { presenceStore } from './presence-store.js';
@@ -93,6 +94,64 @@ const withValidation = async (schema, payload, ack, handler) => {
   await handler(parsed.data);
 };
 
+const toUint8Array = (payload) => {
+  if (payload instanceof Uint8Array) {
+    return payload;
+  }
+
+  if (Buffer.isBuffer(payload)) {
+    return new Uint8Array(payload);
+  }
+
+  if (payload instanceof ArrayBuffer) {
+    return new Uint8Array(payload);
+  }
+
+  if (ArrayBuffer.isView(payload)) {
+    return new Uint8Array(payload.buffer, payload.byteOffset, payload.byteLength);
+  }
+
+  throw new Error('Expected binary payload.');
+};
+
+const emitAsyncServerError = (socket, code, message, details = {}) => {
+  socket.emit('server:error', {
+    code,
+    message,
+    ...details
+  });
+};
+
+const emitPresenceViewChanged = (collab, projectId, entry) => {
+  if (!entry) {
+    return;
+  }
+
+  collab.to(roomHelpers.project(projectId)).emit('presence:view-changed', {
+    userId: entry.userId,
+    ...entry.view
+  });
+};
+
+const emitPresenceLeave = (collab, projectId, userId) => {
+  collab.to(roomHelpers.project(projectId)).emit('presence:user-left', {
+    userId
+  });
+};
+
+const handlePresenceExit = (collab, projectId, result, userId) => {
+  if (!result) {
+    return;
+  }
+
+  if (result.removed) {
+    emitPresenceLeave(collab, projectId, userId);
+    return;
+  }
+
+  emitPresenceViewChanged(collab, projectId, result.entry);
+};
+
 export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
   const io = new Server(httpServer, {
     serveClient: true,
@@ -124,13 +183,18 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
     }
 
     if (!hasCompletedOnboarding(user)) {
-      logger.warn({ socketId: socket.id, sessionUserId }, 'Socket auth failed: onboarding incomplete');
+      logger.warn(
+        { socketId: socket.id, sessionUserId },
+        'Socket auth failed: onboarding incomplete'
+      );
       return next(new Error('ONBOARDING_REQUIRED'));
     }
 
     socket.data.user = user;
     socket.data.joinedProjectIds = new Set();
     socket.data.projectScopedRooms = new Map();
+    socket.data.sceneContexts = new Map();
+    socket.data.activeSceneContext = null;
     socket.join(roomHelpers.user(user.publicId));
     next();
   });
@@ -141,6 +205,37 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
       { socketId: socket.id, userId: user.publicId },
       'Socket connected to /collab'
     );
+
+    const leaveSceneRoom = async (sceneId) => {
+      const context = socket.data.sceneContexts.get(sceneId);
+      const awarenessRemoval = await sceneSessionManager.leave({
+        sceneId,
+        socketId: socket.id
+      });
+
+      if (awarenessRemoval) {
+        collab.to(roomHelpers.scene(sceneId)).emit('scene:yjs-awareness', {
+          sceneId,
+          payload: Buffer.from(awarenessRemoval)
+        });
+      }
+
+      socket.leave(roomHelpers.scene(sceneId));
+      socket.data.projectScopedRooms.delete(roomHelpers.scene(sceneId));
+      socket.data.sceneContexts.delete(sceneId);
+
+      if (socket.data.activeSceneContext?.sceneId === sceneId && context) {
+        const updatedPresence = presenceStore.clearSceneContext(
+          context.projectId,
+          user.publicId,
+          socket.id,
+          sceneId
+        );
+
+        emitPresenceViewChanged(collab, context.projectId, updatedPresence);
+        socket.data.activeSceneContext = null;
+      }
+    };
 
     socket.on('project:join', async (payload, ack) => {
       await withValidation(projectSchema, payload, ack, async ({ projectId }) => {
@@ -164,7 +259,9 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
         );
 
         if (isFirstConnection) {
-          socket.to(roomHelpers.project(projectId)).emit('presence:user-joined', entry);
+          socket
+            .to(roomHelpers.project(projectId))
+            .emit('presence:user-joined', entry);
         }
 
         const data = {
@@ -185,6 +282,14 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
 
     socket.on('project:leave', async (payload, ack) => {
       await withValidation(projectSchema, payload, ack, async ({ projectId }) => {
+        for (const [sceneId, context] of socket.data.sceneContexts.entries()) {
+          if (context.projectId !== projectId) {
+            continue;
+          }
+
+          await leaveSceneRoom(sceneId);
+        }
+
         socket.leave(roomHelpers.project(projectId));
         socket.data.joinedProjectIds.delete(projectId);
 
@@ -197,12 +302,8 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
           socket.data.projectScopedRooms.delete(roomName);
         }
 
-        const { removed } = presenceStore.leaveProject(projectId, user.publicId, socket.id);
-        if (removed) {
-          collab.to(roomHelpers.project(projectId)).emit('presence:user-left', {
-            userId: user.publicId
-          });
-        }
+        const result = presenceStore.leaveProject(projectId, user.publicId, socket.id);
+        handlePresenceExit(collab, projectId, result, user.publicId);
 
         ack?.(ackOk({ projectId }));
       });
@@ -235,14 +336,12 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
         const updatedPresence = presenceStore.setScriptContext(
           projectId,
           user.publicId,
-          scriptId
+          socket.id,
+          scriptId,
+          'viewing'
         );
-        if (updatedPresence) {
-          collab.to(roomHelpers.project(projectId)).emit('presence:view-changed', {
-            userId: user.publicId,
-            ...updatedPresence.view
-          });
-        }
+
+        emitPresenceViewChanged(collab, projectId, updatedPresence);
 
         const data = {
           projectId,
@@ -258,19 +357,22 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
 
     socket.on('script:leave', async (payload, ack) => {
       await withValidation(scriptSchema, payload, ack, async ({ projectId, scriptId }) => {
+        for (const [sceneId, context] of socket.data.sceneContexts.entries()) {
+          if (context.projectId === projectId && context.scriptId === scriptId) {
+            await leaveSceneRoom(sceneId);
+          }
+        }
+
         socket.leave(roomHelpers.script(scriptId));
         socket.data.projectScopedRooms.delete(roomHelpers.script(scriptId));
         const updatedPresence = presenceStore.clearScriptContext(
           projectId,
           user.publicId,
+          socket.id,
           scriptId
         );
-        if (updatedPresence) {
-          collab.to(roomHelpers.project(projectId)).emit('presence:view-changed', {
-            userId: user.publicId,
-            ...updatedPresence.view
-          });
-        }
+
+        emitPresenceViewChanged(collab, projectId, updatedPresence);
 
         ack?.(ackOk({ scriptId }));
       });
@@ -307,15 +409,50 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
           return ack?.(ackError('NOT_FOUND', 'Scene not found.'));
         }
 
+        const canEdit = roleHelpers.canEditProjectContent(membership.role);
+        const session = await sceneSessionManager.join({
+          scene: {
+            ...scene.toObject(),
+            _id: scene._id,
+            publicId: scene.publicId,
+            projectPublicId: project.publicId,
+            scriptPublicId: script.publicId
+          },
+          socketId: socket.id,
+          user,
+          canEdit
+        });
+
         socket.join(roomHelpers.scene(sceneId));
         socket.data.projectScopedRooms.set(roomHelpers.scene(sceneId), projectId);
+        socket.data.sceneContexts.set(sceneId, {
+          projectId,
+          scriptId,
+          sceneId
+        });
+        socket.data.activeSceneContext = {
+          projectId,
+          scriptId,
+          sceneId
+        };
+
+        const updatedPresence = presenceStore.setSceneContext(
+          projectId,
+          user.publicId,
+          socket.id,
+          scriptId,
+          sceneId,
+          canEdit ? 'editing' : 'viewing'
+        );
+
+        emitPresenceViewChanged(collab, projectId, updatedPresence);
+
         const data = {
           sceneId,
-          canEdit: roleHelpers.canEditProjectContent(membership.role),
-          latestMajorVersionId: scene.latestMajorVersionId
-            ? String(scene.latestMajorVersionId)
-            : null,
-          headUpdatedAt: scene.headUpdatedAt.toISOString()
+          canEdit,
+          latestMajorVersionId: session.latestMajorVersionId,
+          headUpdatedAt:
+            session.lastPersistedAt?.toISOString?.() ?? new Date().toISOString()
         };
 
         socket.emit('scene:joined', data);
@@ -325,8 +462,7 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
 
     socket.on('scene:leave', async (payload, ack) => {
       await withValidation(leaveSceneSchema, payload, ack, async ({ sceneId }) => {
-        socket.leave(roomHelpers.scene(sceneId));
-        socket.data.projectScopedRooms.delete(roomHelpers.scene(sceneId));
+        await leaveSceneRoom(sceneId);
         ack?.(ackOk({ sceneId }));
       });
     });
@@ -389,17 +525,161 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
           );
         }
 
-        const updated = presenceStore.updateView(view.projectId, user.publicId, view);
+        const updated = presenceStore.updateView(
+          view.projectId,
+          user.publicId,
+          socket.id,
+          view
+        );
         if (!updated) {
           return ack?.(ackError('CONFLICT', 'Presence state was not initialized.'));
         }
 
-        collab.to(roomHelpers.project(view.projectId)).emit('presence:view-changed', {
-          userId: user.publicId,
-          ...view
-        });
+        emitPresenceViewChanged(collab, view.projectId, updated);
 
         ack?.(ackOk(updated));
+      });
+    });
+
+    socket.on('scene:yjs-sync', async (payload, ack) => {
+      await withValidation(yjsSceneSchema, payload, ack, async ({ sceneId, payload: rawPayload }) => {
+        const session = sceneSessionManager.get(sceneId);
+
+        if (!session || !socket.data.sceneContexts.has(sceneId)) {
+          return ack?.(
+            ackError('FORBIDDEN', 'Join the scene room before syncing.')
+          );
+        }
+
+        try {
+          const reply = session.buildSyncReply(toUint8Array(rawPayload), {
+            type: 'scene:yjs-sync',
+            socketId: socket.id
+          });
+
+          if (reply) {
+            socket.emit('scene:yjs-sync', {
+              sceneId,
+              payload: Buffer.from(reply)
+            });
+          }
+
+          ack?.(ackOk({ sceneId }));
+        } catch (error) {
+          logger.warn(
+            {
+              socketId: socket.id,
+              sceneId,
+              error
+            },
+            'Invalid scene Yjs sync payload.'
+          );
+          emitAsyncServerError(
+            socket,
+            'INVALID_PAYLOAD',
+            'Scene sync payload was invalid.',
+            { sceneId }
+          );
+          ack?.(ackError('INVALID_PAYLOAD', 'Scene sync payload was invalid.'));
+        }
+      });
+    });
+
+    socket.on('scene:yjs-update', async (payload, ack) => {
+      await withValidation(yjsSceneSchema, payload, ack, async ({ sceneId, payload: rawPayload }) => {
+        const session = sceneSessionManager.get(sceneId);
+        const member = session?.getMember(socket.id);
+
+        if (!session || !member) {
+          return ack?.(
+            ackError('FORBIDDEN', 'Join the scene room before sending updates.')
+          );
+        }
+
+        if (!member.canEdit) {
+          emitAsyncServerError(
+            socket,
+            'FORBIDDEN',
+            'You do not have permission to edit this scene.',
+            { sceneId }
+          );
+          return ack?.(
+            ackError('FORBIDDEN', 'You do not have permission to edit this scene.')
+          );
+        }
+
+        try {
+          const binaryPayload = toUint8Array(rawPayload);
+          session.applyDocumentUpdate(binaryPayload, {
+            socketId: socket.id,
+            actor: user
+          });
+
+          socket.to(roomHelpers.scene(sceneId)).emit('scene:yjs-update', {
+            sceneId,
+            payload: Buffer.from(binaryPayload)
+          });
+
+          ack?.(ackOk({ sceneId }));
+        } catch (error) {
+          logger.warn(
+            {
+              socketId: socket.id,
+              sceneId,
+              error
+            },
+            'Invalid scene Yjs update payload.'
+          );
+          emitAsyncServerError(
+            socket,
+            'INVALID_PAYLOAD',
+            'Scene update payload was invalid.',
+            { sceneId }
+          );
+          ack?.(ackError('INVALID_PAYLOAD', 'Scene update payload was invalid.'));
+        }
+      });
+    });
+
+    socket.on('scene:yjs-awareness', async (payload, ack) => {
+      await withValidation(yjsSceneSchema, payload, ack, async ({ sceneId, payload: rawPayload }) => {
+        const session = sceneSessionManager.get(sceneId);
+
+        if (!session || !socket.data.sceneContexts.has(sceneId)) {
+          return ack?.(
+            ackError('FORBIDDEN', 'Join the scene room before sending awareness.')
+          );
+        }
+
+        try {
+          const binaryPayload = toUint8Array(rawPayload);
+          session.applyAwarenessUpdate(binaryPayload, {
+            socketId: socket.id
+          });
+
+          socket.to(roomHelpers.scene(sceneId)).emit('scene:yjs-awareness', {
+            sceneId,
+            payload: Buffer.from(binaryPayload)
+          });
+
+          ack?.(ackOk({ sceneId }));
+        } catch (error) {
+          logger.warn(
+            {
+              socketId: socket.id,
+              sceneId,
+              error
+            },
+            'Invalid scene Yjs awareness payload.'
+          );
+          emitAsyncServerError(
+            socket,
+            'INVALID_PAYLOAD',
+            'Scene awareness payload was invalid.',
+            { sceneId }
+          );
+          ack?.(ackError('INVALID_PAYLOAD', 'Scene awareness payload was invalid.'));
+        }
       });
     });
 
@@ -415,25 +695,26 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
       });
     };
 
-    registerPlaceholderEvent('scene:yjs-sync', yjsSceneSchema);
-    registerPlaceholderEvent('scene:yjs-update', yjsSceneSchema);
-    registerPlaceholderEvent('scene:yjs-awareness', yjsSceneSchema);
     registerPlaceholderEvent('note:yjs-sync', yjsNoteSchema);
     registerPlaceholderEvent('note:yjs-update', yjsNoteSchema);
     registerPlaceholderEvent('note:yjs-awareness', yjsNoteSchema);
 
     socket.on('disconnect', () => {
-      const removedProjects = presenceStore.leaveAll(socket.id, user.publicId);
-      for (const projectId of removedProjects) {
-        collab.to(roomHelpers.project(projectId)).emit('presence:user-left', {
-          userId: user.publicId
-        });
-      }
+      void (async () => {
+        for (const sceneId of [...socket.data.sceneContexts.keys()]) {
+          await leaveSceneRoom(sceneId);
+        }
 
-      logger.info(
-        { socketId: socket.id, userId: user.publicId },
-        'Socket disconnected from /collab'
-      );
+        const results = presenceStore.leaveAll(socket.id, user.publicId);
+        for (const result of results) {
+          handlePresenceExit(collab, result.projectId, result, user.publicId);
+        }
+
+        logger.info(
+          { socketId: socket.id, userId: user.publicId },
+          'Socket disconnected from /collab'
+        );
+      })();
     });
   });
 

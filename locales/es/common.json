@@ -235,6 +235,9 @@
       "sceneSelectLabel": "Escena activa",
       "noScenesHelp": "Crea una escena en el esquema para empezar a escribir aquí.",
       "activeSceneLabel": "Escena activa",
+      "collaboratorsHeading": "Colaboradores",
+      "collaboratorsHelp": "La presencia en vivo de esta escena se actualiza cuando alguien entra, sale o cambia entre edición y vista.",
+      "collaboratorsEmpty": "No hay colaboradores en esta escena en este momento.",
       "reloadLatest": "Recargar última",
       "lastSavedLabel": "Último guardado",
       "notSavedYet": "Todavía no se guardó",
@@ -252,6 +255,18 @@
         "failed": "Error al guardar",
         "readOnly": "Solo lectura",
         "stale": "Copia local desactualizada"
+      },
+      "persistenceStates": {
+        "persisted": "Persistido",
+        "unsaved": "Cambios colaborativos sin persistir",
+        "failed": "Falló la persistencia",
+        "readOnly": "Solo lectura"
+      },
+      "connectionStates": {
+        "connecting": "Conectando",
+        "connected": "Conectado",
+        "reconnecting": "Reconectando…",
+        "unavailable": "No disponible"
       },
       "blockTypes": {
         "slugline": "Encabezado",

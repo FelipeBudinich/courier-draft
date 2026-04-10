@@ -397,7 +397,7 @@ const initOutlineInteractions = () => {
 const initScriptRealtime = () => {
   const shell = document.querySelector('[data-script-shell]');
   const connectionNode = shell?.querySelector?.('[data-script-connection-state]');
-  if (!shell || !window.io) {
+  if (!shell || !window.io || document.querySelector('[data-editor-page]')) {
     return;
   }
 

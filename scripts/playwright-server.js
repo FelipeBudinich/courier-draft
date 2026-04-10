@@ -11,6 +11,7 @@ const { createApp } = await import('../src/app.js');
 const { connectToMongo, disconnectFromMongo } = await import('../src/config/db.js');
 const { seedDevelopmentData } = await import('../src/models/seed.js');
 const { Project, ProjectMember, User } = await import('../src/models/index.js');
+const { sceneSessionManager } = await import('../src/services/collab/scene-session-manager.js');
 const { createRealtimeServer } = await import('../src/sockets/index.js');
 const { presenceStore } = await import('../src/sockets/presence-store.js');
 
@@ -137,6 +138,7 @@ const shutdown = async () => {
   io.close();
   await new Promise((resolve) => httpServer.close(resolve));
   presenceStore.clear();
+  sceneSessionManager.clear();
   await disconnectFromMongo();
   await mongoServer.stop();
   process.exit(0);

@@ -235,6 +235,9 @@
       "sceneSelectLabel": "Active scene",
       "noScenesHelp": "Create a scene in the outline to start writing here.",
       "activeSceneLabel": "Active scene",
+      "collaboratorsHeading": "Collaborators",
+      "collaboratorsHelp": "Live presence in this scene updates as people join, leave, and switch between editing and viewing.",
+      "collaboratorsEmpty": "No collaborators are currently in this scene.",
       "reloadLatest": "Reload latest",
       "lastSavedLabel": "Last saved",
       "notSavedYet": "Not saved yet",
@@ -252,6 +255,18 @@
         "failed": "Save failed",
         "readOnly": "Read-only",
         "stale": "Stale local copy"
+      },
+      "persistenceStates": {
+        "persisted": "Persisted",
+        "unsaved": "Unsaved collaborative changes",
+        "failed": "Persistence failed",
+        "readOnly": "Read-only"
+      },
+      "connectionStates": {
+        "connecting": "Connecting",
+        "connected": "Connected",
+        "reconnecting": "Reconnecting…",
+        "unavailable": "Unavailable"
       },
       "blockTypes": {
         "slugline": "Slugline",

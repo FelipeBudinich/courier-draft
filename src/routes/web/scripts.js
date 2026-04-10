@@ -9,6 +9,7 @@ import {
 } from '../../middleware/auth.js';
 import { loadScript } from '../../middleware/resources.js';
 import { findSceneByPublicId } from '../../models/lookups.js';
+import { sceneSessionManager } from '../../services/collab/scene-session-manager.js';
 import { getScriptDetailReadModel } from '../../services/scripts/service.js';
 import { SCENE_TEXT_BLOCK_TYPES } from '../../services/scenes/document-constants.js';
 import {
@@ -109,15 +110,26 @@ router.get(
           project: req.project,
           script: detail.script,
           scene: activeScene,
+          currentUser: req.currentUser,
           projectRole: req.projectRole,
           outlineNodes: detail.outline,
-          saveStateLabels: {
-            saved: t('pages.editor.saveStates.saved'),
-            saving: t('pages.editor.saveStates.saving'),
-            unsaved: t('pages.editor.saveStates.unsaved'),
-            failed: t('pages.editor.saveStates.failed'),
-            readOnly: t('pages.editor.saveStates.readOnly'),
-            stale: t('pages.editor.saveStates.stale')
+          persistenceStateLabels: {
+            persisted: t('pages.editor.persistenceStates.persisted'),
+            unsaved: t('pages.editor.persistenceStates.unsaved'),
+            failed: t('pages.editor.persistenceStates.failed'),
+            readOnly: t('pages.editor.persistenceStates.readOnly'),
+            reconnecting: t('pages.editor.connectionStates.reconnecting')
+          },
+          connectionStateLabels: {
+            connecting: t('pages.editor.connectionStates.connecting'),
+            connected: t('pages.editor.connectionStates.connected'),
+            reconnecting: t('pages.editor.connectionStates.reconnecting'),
+            unavailable: t('pages.editor.connectionStates.unavailable')
+          },
+          collaboration: {
+            enabled: true,
+            namespace: '/collab',
+            sessionActive: sceneSessionManager.hasActiveSession(activeScene.publicId)
           }
         })
       );

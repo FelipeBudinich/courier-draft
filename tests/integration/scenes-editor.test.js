@@ -60,7 +60,7 @@ describe('scene editor routes and persistence', () => {
     expect(ownerResponse.status).toBe(200);
     expect(ownerResponse.text).toContain('data-editor-page');
     expect(ownerResponse.text).toContain(seedFixtures.scenes.intro.publicId);
-    expect(ownerResponse.text).toContain('data-save-state="saved"');
+    expect(ownerResponse.text).toContain('data-save-state="persisted"');
 
     const reviewerResponse = await reviewerAgent.get(
       `/projects/${seedFixtures.project.publicId}/scripts/${seedFixtures.script.publicId}/editor`

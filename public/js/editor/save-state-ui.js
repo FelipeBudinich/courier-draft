@@ -5,7 +5,8 @@ export const createSaveStateUI = ({
   messageElement,
   reloadButton,
   labels,
-  locale
+  locale,
+  emptyLabel = 'Not saved yet'
 }) => {
   const formatter = new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
@@ -27,16 +28,9 @@ export const createSaveStateUI = ({
       statusElement.textContent = labels[state.status] ?? state.status;
       timestampElement.textContent = state.lastSavedAt
         ? formatter.format(new Date(state.lastSavedAt))
-        : 'Not saved yet';
-      reloadButton.hidden = state.status !== 'stale';
-
-      if (state.status === 'failed') {
-        setMessage(state.error?.message ?? labels.failed);
-      } else if (state.status === 'stale') {
-        setMessage('A newer draft exists. Reload the latest scene head to continue.');
-      } else {
-        setMessage('');
-      }
+        : emptyLabel;
+      reloadButton.hidden = !state.showReload;
+      setMessage(state.message ?? state.error?.message ?? '');
     },
     showNavigationError(message) {
       setMessage(message);

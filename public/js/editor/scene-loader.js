@@ -56,6 +56,7 @@ export const createSceneLoader = ({
 
   return {
     buildEditorUrl,
+    fetchBootstrap,
     loadScene
   };
 };

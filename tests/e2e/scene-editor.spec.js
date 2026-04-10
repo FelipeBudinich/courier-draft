@@ -1,123 +1,129 @@
 import { expect, test } from '@playwright/test';
 
+const PROJECT_ID = 'prj_foundation_demo';
+const SCRIPT_ID = 'scr_pilot_demo';
+const SCENE_ID = 'scn_intro_demo';
+const modUndo = process.platform === 'darwin' ? 'Meta+z' : 'Control+z';
+
+const sceneEditorUrl = `/projects/${PROJECT_ID}/scripts/${SCRIPT_ID}/editor?sceneId=${SCENE_ID}`;
+
 const loginAs = async (page, email) => {
   await page.goto('/login');
   await page.selectOption('select[name="email"]', email);
   await page.getByRole('button', { name: /enter the app/i }).click();
 };
 
-const acceptPrompt = async (page, trigger, promptText) => {
-  const dialogPromise = page
-    .waitForEvent('dialog')
-    .then((dialog) => dialog.accept(promptText));
-  await trigger.click();
-  await dialogPromise;
+const openSceneEditor = async (page, email) => {
+  await loginAs(page, email);
+  await page.goto(sceneEditorUrl);
+  await expect(page.locator('[data-editor-page]')).toBeVisible();
+  await expect(page.locator('.ProseMirror')).toBeVisible();
 };
 
-test('owner can edit a scene draft and reviewer stays read-only', async ({ browser }) => {
-  const ownerPage = await browser.newPage();
-  await loginAs(ownerPage, 'owner@courier.test');
-
-  await ownerPage.goto('/projects/prj_foundation_demo');
-  await ownerPage.getByRole('link', { name: /create script/i }).click();
-  await ownerPage.getByLabel('Title').fill('Editor Review Script');
-  await ownerPage.getByRole('button', { name: /create script/i }).click();
-
-  const rootOutlineControls = ownerPage.locator('[data-outline-root] > div').first();
-  await acceptPrompt(
-    ownerPage,
-    rootOutlineControls.getByRole('button', { name: /add scene/i }),
-    'Review Scene'
-  );
-  await expect(ownerPage.getByText('Review Scene')).toBeVisible();
-
-  await ownerPage.getByRole('link', { name: /open editor/i }).click();
-  await expect(ownerPage).toHaveURL(/\/editor(\?sceneId=scn_.*)?$/);
-  await expect(ownerPage.locator('[data-editor-page]')).toBeVisible();
-
-  await ownerPage.selectOption('[data-block-type-select]', 'slugline');
-  const editor = ownerPage.locator('.ProseMirror');
+const appendActionLine = async (page, text) => {
+  const editor = page.locator('.ProseMirror');
   await editor.click();
-  await editor.pressSequentially('INT. KITCHEN - DAY');
+  await editor.press('End');
   await editor.press('Enter');
-  await editor.pressSequentially('Maria waits at the sink.');
+  await page.keyboard.insertText(text);
+};
 
+test('two editors collaborate live, show presence, and reload into persisted scene content', async ({
+  browser
+}) => {
+  const ownerToken = `OWNER-${Date.now()}`;
+  const editorToken = `EDITOR-${Date.now()}`;
+
+  const ownerPage = await browser.newPage();
+  const editorPage = await browser.newPage();
+
+  await openSceneEditor(ownerPage, 'owner@courier.test');
+  await expect(ownerPage.locator('[data-script-connection-state]')).toHaveAttribute(
+    'data-connection-state',
+    'connected'
+  );
+
+  await openSceneEditor(editorPage, 'editor@courier.test');
+  await expect(editorPage.locator('[data-script-connection-state]')).toHaveAttribute(
+    'data-connection-state',
+    'connected'
+  );
+
+  await expect(ownerPage.locator('[data-collaborator-summary]')).toBeVisible();
+  await expect(editorPage.locator('[data-collaborator-summary]')).toBeVisible();
+
+  await appendActionLine(ownerPage, ownerToken);
   await expect(ownerPage.locator('[data-save-state-badge]')).toHaveText(
-    /Unsaved changes|Saving…/
+    'Unsaved collaborative changes'
   );
+  await expect(editorPage.locator('.ProseMirror')).toContainText(ownerToken);
 
-  const saveResponsePromise = ownerPage.waitForResponse(
-    (response) =>
-      response.url().includes('/head') &&
-      response.request().method() === 'PUT' &&
-      response.status() === 200
-  );
-  await ownerPage.locator('[data-save-now]').click();
+  await appendActionLine(editorPage, editorToken);
+  await expect(ownerPage.locator('.ProseMirror')).toContainText(editorToken);
 
-  await saveResponsePromise;
-  await expect(ownerPage.locator('[data-save-state-badge]')).toHaveText('Saved');
+  await expect(ownerPage.locator('[data-save-state-badge]')).toHaveText('Persisted', {
+    timeout: 10_000
+  });
 
-  const sceneUrl = ownerPage.url();
   await ownerPage.reload();
-  await expect(ownerPage).toHaveURL(sceneUrl);
-  await expect(ownerPage.locator('.ProseMirror')).toContainText('INT. KITCHEN - DAY');
-  await expect(ownerPage.locator('.ProseMirror')).toContainText('Maria waits at the sink.');
+  await expect(ownerPage).toHaveURL(sceneEditorUrl);
+  await expect(ownerPage.locator('.ProseMirror')).toContainText(ownerToken);
+  await expect(ownerPage.locator('.ProseMirror')).toContainText(editorToken);
 
+  await ownerPage.close();
+  await editorPage.close();
+});
+
+test('reviewer sees live scene updates but stays read-only', async ({ browser }) => {
+  const reviewToken = `REVIEW-${Date.now()}`;
+
+  const ownerPage = await browser.newPage();
   const reviewerPage = await browser.newPage();
-  await loginAs(reviewerPage, 'reviewer@courier.test');
-  await reviewerPage.goto(sceneUrl);
+
+  await openSceneEditor(ownerPage, 'owner@courier.test');
+  await openSceneEditor(reviewerPage, 'reviewer@courier.test');
 
   await expect(reviewerPage.locator('[data-read-only-badge]')).toBeVisible();
   await expect(reviewerPage.locator('[data-block-type-select]')).toBeDisabled();
-  await expect(reviewerPage.locator('[data-save-now]')).toBeDisabled();
   await expect(reviewerPage.locator('.ProseMirror')).toHaveAttribute(
     'contenteditable',
     'false'
   );
+  await appendActionLine(ownerPage, reviewToken);
+  await expect(reviewerPage.locator('.ProseMirror')).toContainText(reviewToken);
+
+  await ownerPage.close();
+  await reviewerPage.close();
 });
 
-test('switching scenes flushes dirty state before loading the next scene', async ({ page }) => {
-  await loginAs(page, 'owner@courier.test');
+test('collaborative undo only removes the local user change', async ({ browser }) => {
+  const ownerToken = `UNDO-OWNER-${Date.now()}`;
+  const editorToken = `UNDO-EDITOR-${Date.now()}`;
 
-  await page.goto('/projects/prj_foundation_demo');
-  await page.getByRole('link', { name: /create script/i }).click();
-  await page.getByLabel('Title').fill('Editor Switch Script');
-  await page.getByRole('button', { name: /create script/i }).click();
+  const ownerPage = await browser.newPage();
+  const editorPage = await browser.newPage();
 
-  const rootOutlineControls = page.locator('[data-outline-root] > div').first();
-  await acceptPrompt(
-    page,
-    rootOutlineControls.getByRole('button', { name: /add scene/i }),
-    'Scene One'
-  );
-  await acceptPrompt(
-    page,
-    rootOutlineControls.getByRole('button', { name: /add scene/i }),
-    'Scene Two'
-  );
+  await openSceneEditor(ownerPage, 'owner@courier.test');
+  await openSceneEditor(editorPage, 'editor@courier.test');
 
-  await page.getByRole('link', { name: /open editor/i }).click();
-  await expect(page.locator('[data-editor-page]')).toBeVisible();
+  await appendActionLine(ownerPage, ownerToken);
+  await expect(editorPage.locator('.ProseMirror')).toContainText(ownerToken);
 
-  const editor = page.locator('.ProseMirror');
-  await editor.click();
-  await page.keyboard.insertText('Draft before switch');
-  await expect(page.locator('[data-save-state-badge]')).toHaveText(
-    'Unsaved changes'
-  );
+  await appendActionLine(editorPage, editorToken);
+  await expect(ownerPage.locator('.ProseMirror')).toContainText(editorToken);
 
-  const saveRequestPromise = page.waitForRequest(
-    (request) =>
-      request.url().includes('/head') &&
-      request.method() === 'PUT' &&
-      request.postData()?.includes('Draft before switch')
-  );
+  await ownerPage.locator('.ProseMirror').click();
+  await ownerPage.keyboard.press(modUndo);
 
-  await page.locator('[data-scene-link]').filter({ hasText: 'Scene Two' }).click();
-  await saveRequestPromise;
-  await expect(page).toHaveURL(/sceneId=scn_/);
-  await expect(page.locator('[data-scene-title]')).toContainText('Scene Two');
+  await expect(ownerPage.locator('.ProseMirror')).not.toContainText(ownerToken, {
+    timeout: 10_000
+  });
+  await expect(editorPage.locator('.ProseMirror')).not.toContainText(ownerToken, {
+    timeout: 10_000
+  });
+  await expect(ownerPage.locator('.ProseMirror')).toContainText(editorToken);
+  await expect(editorPage.locator('.ProseMirror')).toContainText(editorToken);
 
-  await page.locator('[data-scene-link]').filter({ hasText: 'Scene One' }).click();
-  await expect(page.locator('.ProseMirror')).toContainText('Draft before switch');
+  await ownerPage.close();
+  await editorPage.close();
 });

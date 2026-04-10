@@ -103,9 +103,12 @@ export const buildSceneBootstrapPayload = ({
   project,
   script,
   scene,
+  currentUser,
   projectRole,
   outlineNodes,
-  saveStateLabels = null
+  persistenceStateLabels = null,
+  connectionStateLabels = null,
+  collaboration = null
 }) => {
   const sceneEntries = listOutlineScenes(outlineNodes);
   const outlineNode = sceneEntries.find((candidate) => candidate.sceneId === scene.publicId);
@@ -128,16 +131,29 @@ export const buildSceneBootstrapPayload = ({
     capabilities: {
       canEdit: roleHelpers.canEditProjectContent(projectRole)
     },
+    currentUser: serializeUser(currentUser),
     document,
+    collaboration:
+      collaboration ?? {
+        enabled: true,
+        namespace: '/collab',
+        sessionActive: false
+      },
     ui: {
-      saveStates:
-        saveStateLabels ?? {
-        saved: 'Saved',
-        saving: 'Saving…',
-        unsaved: 'Unsaved changes',
-        failed: 'Save failed',
+      persistenceStates:
+        persistenceStateLabels ?? {
+        persisted: 'Persisted',
+        unsaved: 'Unsaved collaborative changes',
+        failed: 'Persistence failed',
         readOnly: 'Read-only',
-        stale: 'Stale local copy'
+        reconnecting: 'Reconnecting…'
+      },
+      connectionStates:
+        connectionStateLabels ?? {
+        connecting: 'Connecting',
+        connected: 'Connected',
+        reconnecting: 'Reconnecting…',
+        unavailable: 'Unavailable'
       }
     }
   };

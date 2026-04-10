@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { asyncRoute } from '../../../config/errors.js';
+import { asyncRoute, conflict } from '../../../config/errors.js';
 import {
   loadProjectMembership,
   requireAuth,
@@ -10,6 +10,7 @@ import {
 import { loadScene, loadScript } from '../../../middleware/resources.js';
 import { validate } from '../../../middleware/validation.js';
 import { getOutlineReadModel } from '../../../services/outline/service.js';
+import { sceneSessionManager } from '../../../services/collab/scene-session-manager.js';
 import { parseSceneHeadSaveRequest } from '../../../services/scenes/document-schema.js';
 import { buildSceneBootstrapPayload } from '../../../services/scenes/scene-bootstrap.js';
 import { saveSceneHead } from '../../../services/scenes/scene-head-save.js';
@@ -30,13 +31,19 @@ const sceneHeadSaveSchema = z
   })
   .strict();
 
-const createSaveStateLabels = (t) => ({
-  saved: t('pages.editor.saveStates.saved'),
-  saving: t('pages.editor.saveStates.saving'),
-  unsaved: t('pages.editor.saveStates.unsaved'),
-  failed: t('pages.editor.saveStates.failed'),
-  readOnly: t('pages.editor.saveStates.readOnly'),
-  stale: t('pages.editor.saveStates.stale')
+const createPersistenceStateLabels = (t) => ({
+  persisted: t('pages.editor.persistenceStates.persisted'),
+  unsaved: t('pages.editor.persistenceStates.unsaved'),
+  failed: t('pages.editor.persistenceStates.failed'),
+  readOnly: t('pages.editor.persistenceStates.readOnly'),
+  reconnecting: t('pages.editor.connectionStates.reconnecting')
+});
+
+const createConnectionStateLabels = (t) => ({
+  connecting: t('pages.editor.connectionStates.connecting'),
+  connected: t('pages.editor.connectionStates.connected'),
+  reconnecting: t('pages.editor.connectionStates.reconnecting'),
+  unavailable: t('pages.editor.connectionStates.unavailable')
 });
 
 router.get(
@@ -61,9 +68,16 @@ router.get(
         project: req.project,
         script: req.script,
         scene: req.scene,
+        currentUser: req.currentUser,
         projectRole: req.projectRole,
         outlineNodes: outline.nodes,
-        saveStateLabels: createSaveStateLabels(t)
+        persistenceStateLabels: createPersistenceStateLabels(t),
+        connectionStateLabels: createConnectionStateLabels(t),
+        collaboration: {
+          enabled: true,
+          namespace: '/collab',
+          sessionActive: sceneSessionManager.hasActiveSession(req.scene.publicId)
+        }
       })
     );
   })
@@ -78,6 +92,10 @@ router.put(
   loadScene,
   requireProjectRole('editor'),
   asyncRoute(async (req, res) => {
+    if (sceneSessionManager.hasActiveSession(req.scene.publicId)) {
+      throw conflict('This scene is currently managed by an active live collaboration session.');
+    }
+
     const payload = parseSceneHeadSaveRequest(req.body);
     const result = await saveSceneHead({
       scene: req.scene,

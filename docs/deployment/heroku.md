@@ -42,6 +42,13 @@ Set these in Heroku config vars:
 - For now, run a single web dyno for reliable realtime behavior.
 - When later epics add full collaboration at scale, add a shared Socket.IO adapter and shared presence backend before scaling horizontally.
 
+## Realtime scene collaboration
+
+- Realtime scene collaboration is process-local in this release.
+- Active scene sessions keep one in-memory Yjs document plus awareness state per scene on the running app instance.
+- Current-head persistence is still written back to MongoDB, but the live collaborative state is not shared across dynos.
+- Run a single app instance for collaborative scene editing until a shared session backend such as Redis is introduced in a later epic.
+
 ## Recommended deploy flow
 
 1. `npm ci`
