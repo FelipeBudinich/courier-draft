@@ -35,7 +35,7 @@ describe('role middleware and placeholder APIs', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(response.text).toContain('Scaffold de creación de guion');
+    expect(response.text).toContain('Crear un guion');
   });
 
   it('enforces reviewer own-note permissions before hitting placeholder handlers', async () => {
@@ -71,11 +71,13 @@ describe('role middleware and placeholder APIs', () => {
     await loginAsUser(stack.request, seedFixtures.users.owner.email);
 
     const response = await stack.request.get(
-      `/api/v1/projects/${seedFixtures.project.publicId}/scripts`
+      `/api/v1/projects/${seedFixtures.project.publicId}/scripts/${seedFixtures.script.publicId}/scenes/${seedFixtures.scenes.intro.publicId}`
     );
 
     expect(response.status).toBe(501);
     expect(response.body.error.code).toBe('NOT_IMPLEMENTED');
-    expect(response.body.error.details.route).toBe('/projects/:projectId/scripts');
+    expect(response.body.error.details.route).toBe(
+      '/projects/:projectId/scripts/:scriptId/scenes/:sceneId'
+    );
   });
 });

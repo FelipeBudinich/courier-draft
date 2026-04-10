@@ -1,4 +1,5 @@
 import supertest from 'supertest';
+import { vi } from 'vitest';
 
 import { Project, ProjectMember, User } from '../../src/models/index.js';
 import {

@@ -232,11 +232,23 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
 
         socket.join(roomHelpers.script(scriptId));
         socket.data.projectScopedRooms.set(roomHelpers.script(scriptId), projectId);
+        const updatedPresence = presenceStore.setScriptContext(
+          projectId,
+          user.publicId,
+          scriptId
+        );
+        if (updatedPresence) {
+          collab.to(roomHelpers.project(projectId)).emit('presence:view-changed', {
+            userId: user.publicId,
+            ...updatedPresence.view
+          });
+        }
+
         const data = {
           projectId,
           scriptId,
           sceneNumberMode: script.sceneNumberMode,
-          activeUsers: []
+          activeUsers: presenceStore.snapshotScript(projectId, scriptId)
         };
 
         socket.emit('script:joined', data);
@@ -245,9 +257,21 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
     });
 
     socket.on('script:leave', async (payload, ack) => {
-      await withValidation(scriptSchema, payload, ack, async ({ scriptId }) => {
+      await withValidation(scriptSchema, payload, ack, async ({ projectId, scriptId }) => {
         socket.leave(roomHelpers.script(scriptId));
         socket.data.projectScopedRooms.delete(roomHelpers.script(scriptId));
+        const updatedPresence = presenceStore.clearScriptContext(
+          projectId,
+          user.publicId,
+          scriptId
+        );
+        if (updatedPresence) {
+          collab.to(roomHelpers.project(projectId)).emit('presence:view-changed', {
+            userId: user.publicId,
+            ...updatedPresence.view
+          });
+        }
+
         ack?.(ackOk({ scriptId }));
       });
     });

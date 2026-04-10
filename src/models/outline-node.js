@@ -66,7 +66,30 @@ const outlineNodeSchema = new Schema(
 outlineNodeSchema.plugin(publicIdPlugin, { prefix: 'out' });
 outlineNodeSchema.index({ scriptId: 1, placementParentId: 1, positionKey: 1 });
 outlineNodeSchema.index({ scriptId: 1, type: 1 });
-outlineNodeSchema.index({ sceneId: 1 }, { unique: true, sparse: true });
+outlineNodeSchema.index(
+  { sceneId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      sceneId: {
+        $type: 'objectId'
+      }
+    }
+  }
+);
+outlineNodeSchema.index(
+  { scriptId: 1, manualSceneNumber: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      manualSceneNumber: {
+        $type: 'string'
+      }
+    }
+  }
+);
+outlineNodeSchema.index({ scriptId: 1, actId: 1 });
+outlineNodeSchema.index({ scriptId: 1, beatId: 1 });
 
 export const OutlineNode =
   mongoose.models.OutlineNode ?? mongoose.model('OutlineNode', outlineNodeSchema);

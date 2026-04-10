@@ -1,12 +1,7 @@
 import { Router } from 'express';
 
 import { asyncRoute } from '../../config/errors.js';
-import {
-  DocumentVersion,
-  Note,
-  OutlineNode,
-  Scene
-} from '../../models/index.js';
+import { DocumentVersion, Note, Scene } from '../../models/index.js';
 import { loadProjectMembership, requireAuth } from '../../middleware/auth.js';
 import { loadScript } from '../../middleware/resources.js';
 import { setSurface } from '../../middleware/request-context.js';
@@ -16,10 +11,12 @@ import {
   getProjectMembersReadModel
 } from '../../services/projects/service.js';
 import { renderFragment } from './helpers.js';
+import scriptsFragmentsRouter from './scripts.js';
 
 const router = Router();
 
 router.use(setSurface('fragment'));
+router.use(scriptsFragmentsRouter);
 
 router.get(
   '/inbox/invites',
@@ -63,20 +60,6 @@ router.get(
       projectId: req.project.publicId,
       canManageMembers: req.projectRole === 'owner'
     });
-  })
-);
-
-router.get(
-  '/projects/:projectId/scripts/:scriptId/outline-tree',
-  requireAuth,
-  loadProjectMembership,
-  loadScript,
-  asyncRoute(async (req, res) => {
-    const outlineNodes = await OutlineNode.find({ scriptId: req.script._id }).sort({
-      positionKey: 1
-    });
-
-    renderFragment(res, 'partials/outline-tree.njk', { outlineNodes });
   })
 );
 

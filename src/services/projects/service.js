@@ -17,6 +17,7 @@ import {
   evictUserFromProjectRooms
 } from '../realtime/broadcaster.js';
 import { presenceService } from '../presence/service.js';
+import { listProjectScriptsReadModel } from '../scripts/service.js';
 
 const MEMBER_STATUS_ORDER = {
   active: 0,
@@ -411,9 +412,10 @@ export const getProjectMembersReadModel = async ({ projectId }) => {
 };
 
 export const getProjectWorkspaceReadModel = async ({ project, membership }) => {
-  const [members, activity] = await Promise.all([
+  const [members, activity, scripts] = await Promise.all([
     getProjectMembersReadModel({ projectId: project._id }),
-    listProjectActivity({ projectId: project._id, limit: 10 })
+    listProjectActivity({ projectId: project._id, limit: 10 }),
+    listProjectScriptsReadModel({ projectId: project._id })
   ]);
 
   return {
@@ -428,6 +430,7 @@ export const getProjectWorkspaceReadModel = async ({ project, membership }) => {
       }))
     ),
     activity: activity.map(serializeActivityEvent),
+    scripts,
     canManageMembers: membership.role === 'owner'
   };
 };

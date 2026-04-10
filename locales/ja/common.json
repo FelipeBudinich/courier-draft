@@ -139,8 +139,8 @@
     },
     "newScript": {
       "title": "新しい脚本",
-      "heading": "脚本作成の足場",
-      "description": "編集者とオーナーはこのページに入れますが、実際の作成処理は API 足場のまま後続エピックに残しています。"
+      "heading": "脚本を作成",
+      "description": "脚本を作成し、メタデータを保存して、アウトライン作業を始めます。"
     },
     "projectOverview": {
       "heading": "プロジェクト概要",
@@ -179,15 +179,56 @@
       "transferEmpty": "所有権を移譲する前に、別の有効メンバーを追加してください。"
     },
     "script": {
+      "title": "脚本概要",
       "heading": "脚本概要",
-      "description": "アウトライン、シーン、エディター入口は実モデルとプレースホルダー API に接続されています。"
+      "description": "メタデータを管理し、アウトラインを整理し、必要になったらエディターシェルへ進めます。"
+    },
+    "scriptFields": {
+      "title": "タイトル",
+      "status": "状態",
+      "description": "説明",
+      "genre": "ジャンル",
+      "language": "言語",
+      "authors": "作者",
+      "authorsHelp": "クレジットは順序付きで保存され、並べ替えできます。",
+      "created": "作成日時",
+      "updated": "更新日時",
+      "totalNodes": "アウトライン ノード数",
+      "totalScenes": "シーン数"
+    },
+    "scriptSections": {
+      "metadata": "脚本メタデータ",
+      "metadataHelp": "このフォームは API に永続化される脚本レベルの項目を管理します。",
+      "numbering": "シーン番号",
+      "numberingHelp": "番号を非表示にするか、自動にするか、制作向けに固定するかを選びます。",
+      "summary": "脚本サマリー",
+      "outlineMode": "番号モード",
+      "dropHint": "ここにドロップすると、このコンテナの末尾に追加されます。"
+    },
+    "scriptActions": {
+      "createScript": "脚本を作成",
+      "cancel": "キャンセル",
+      "addAuthor": "作者を追加",
+      "moveUp": "上へ",
+      "moveDown": "下へ",
+      "remove": "削除",
+      "dangerZone": "注意が必要な操作",
+      "deleteHelp": "脚本を削除すると、アウトライン、プレースホルダーシーン、ノート、バージョンも削除されます。",
+      "deleteScript": "脚本を削除",
+      "backToOverview": "脚本概要へ戻る",
+      "addAct": "幕を追加",
+      "addBeat": "ビートを追加",
+      "addScene": "シーンを追加",
+      "rename": "名前を変更",
+      "delete": "削除"
     },
     "editor": {
       "heading": "エディターシェルの足場",
       "description": "共同編集そのものは後続ですが、シェル、ルーム契約、役割に応じた編集可否は準備済みです。",
       "socketNamespace": "ソケット名前空間",
       "canEdit": "このユーザーは今後の共同編集フローで編集できます。",
-      "readOnly": "このユーザーは読み取り専用でシーンに参加します。"
+      "readOnly": "このユーザーは読み取り専用でシーンに参加します。",
+      "placeholderBody": "脚本本文エディター自体はこの PR では意図的に後回しです。このシェルではアウトライン側バー、脚本プレゼンス、将来のマウントポイントを先に整えています。"
     },
     "todo": {
       "title": "基盤プレースホルダー",

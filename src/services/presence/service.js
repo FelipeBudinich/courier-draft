@@ -135,7 +135,48 @@ export const presenceService = {
     return serializeEntry(existing);
   },
 
+  setScriptContext(projectId, userId, scriptId) {
+    const presence = projectPresence.get(projectId);
+    const existing = presence?.get(userId);
+    if (!existing) {
+      return null;
+    }
+
+    existing.view = {
+      ...existing.view,
+      projectId,
+      scriptId,
+      sceneId: null,
+      noteId: null,
+      mode: existing.view?.mode ?? 'viewing'
+    };
+
+    return serializeEntry(existing);
+  },
+
+  clearScriptContext(projectId, userId, scriptId) {
+    const presence = projectPresence.get(projectId);
+    const existing = presence?.get(userId);
+    if (!existing || existing.view?.scriptId !== scriptId) {
+      return null;
+    }
+
+    existing.view = {
+      ...existing.view,
+      scriptId: null,
+      sceneId: null,
+      noteId: null,
+      mode: existing.view?.mode ?? 'idle'
+    };
+
+    return serializeEntry(existing);
+  },
+
   snapshot(projectId) {
     return [...(projectPresence.get(projectId)?.values() ?? [])].map(serializeEntry);
+  },
+
+  snapshotScript(projectId, scriptId) {
+    return this.snapshot(projectId).filter((entry) => entry.view?.scriptId === scriptId);
   }
 };

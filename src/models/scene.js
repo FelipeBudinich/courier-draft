@@ -27,6 +27,24 @@ const sceneSchema = new Schema(
       required: true,
       trim: true
     },
+    structuredBody: {
+      blocks: {
+        type: [Schema.Types.Mixed],
+        default: []
+      },
+      cachedSlugline: {
+        type: String,
+        default: null
+      },
+      characterRefs: {
+        type: [String],
+        default: []
+      },
+      locationRefs: {
+        type: [String],
+        default: []
+      }
+    },
     headContent: {
       type: String,
       default: ''
@@ -51,4 +69,3 @@ sceneSchema.index({ projectId: 1, scriptId: 1 });
 sceneSchema.index({ scriptId: 1, updatedAt: -1 });
 
 export const Scene = mongoose.models.Scene ?? mongoose.model('Scene', sceneSchema);
-

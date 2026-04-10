@@ -139,8 +139,8 @@
     },
     "newScript": {
       "title": "Nuevo guion",
-      "heading": "Scaffold de creación de guion",
-      "description": "Editores y propietarios ya pueden entrar aquí; la mutación real sigue reservada para la API scaffolded."
+      "heading": "Crear un guion",
+      "description": "Crea un guion, guarda su metadata y empieza a construir el esquema."
     },
     "projectOverview": {
       "heading": "Resumen del proyecto",
@@ -179,15 +179,56 @@
       "transferEmpty": "Agrega otro miembro activo antes de transferir la propiedad."
     },
     "script": {
+      "title": "Resumen del guion",
       "heading": "Resumen del guion",
-      "description": "El esquema, las escenas y la entrada al editor ya están conectados a modelos reales y APIs placeholder."
+      "description": "Gestiona la metadata, estructura el esquema y entra a la shell del editor cuando lo necesites."
+    },
+    "scriptFields": {
+      "title": "Título",
+      "status": "Estado",
+      "description": "Descripción",
+      "genre": "Género",
+      "language": "Idioma",
+      "authors": "Autores",
+      "authorsHelp": "Los créditos se guardan en orden y se pueden reordenar.",
+      "created": "Creado",
+      "updated": "Actualizado",
+      "totalNodes": "Nodos del esquema",
+      "totalScenes": "Escenas"
+    },
+    "scriptSections": {
+      "metadata": "Metadata del guion",
+      "metadataHelp": "Este formulario controla los campos del guion que se guardan de forma durable en la API.",
+      "numbering": "Numeración de escenas",
+      "numberingHelp": "Elige si las escenas se ocultan, se numeran automáticamente o quedan congeladas para producción.",
+      "summary": "Resumen del guion",
+      "outlineMode": "Modo de numeración",
+      "dropHint": "Suelta un nodo aquí para agregarlo al final de este contenedor."
+    },
+    "scriptActions": {
+      "createScript": "Crear guion",
+      "cancel": "Cancelar",
+      "addAuthor": "Agregar autor",
+      "moveUp": "Subir",
+      "moveDown": "Bajar",
+      "remove": "Quitar",
+      "dangerZone": "Zona sensible",
+      "deleteHelp": "Eliminar un guion borra su esquema, escenas placeholder, notas y versiones.",
+      "deleteScript": "Eliminar guion",
+      "backToOverview": "Volver al resumen",
+      "addAct": "Agregar acto",
+      "addBeat": "Agregar beat",
+      "addScene": "Agregar escena",
+      "rename": "Renombrar",
+      "delete": "Eliminar"
     },
     "editor": {
       "heading": "Scaffold de la shell del editor",
       "description": "El editor colaborativo completo se posterga, pero la shell, el contrato de rooms y la editabilidad por rol ya están listas.",
       "socketNamespace": "Namespace del socket",
       "canEdit": "Este usuario podrá editar en los futuros flujos colaborativos.",
-      "readOnly": "Este usuario entra a la escena en modo solo lectura."
+      "readOnly": "Este usuario entra a la escena en modo solo lectura.",
+      "placeholderBody": "El editor del cuerpo del guion se deja a propósito para un PR posterior. Esta shell mantiene listo el sidebar del esquema, la presencia del guion y el punto de montaje futuro."
     },
     "todo": {
       "title": "Placeholder de la fundación",

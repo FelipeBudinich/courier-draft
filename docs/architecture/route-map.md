@@ -182,7 +182,7 @@ These routes return JSON and should be treated as the main durable command/read 
 | Method | Path | Access | Purpose |
 |---|---|---:|---|
 | GET | `/api/v1/projects/:projectId/scripts` | Member | List scripts in a project |
-| POST | `/api/v1/projects/:projectId/scripts` | Owner | Create script |
+| POST | `/api/v1/projects/:projectId/scripts` | Editor+ | Create script |
 | GET | `/api/v1/projects/:projectId/scripts/:scriptId` | Member | Script detail read model |
 | PATCH | `/api/v1/projects/:projectId/scripts/:scriptId` | Editor+ | Update script metadata |
 | DELETE | `/api/v1/projects/:projectId/scripts/:scriptId` | Owner | Delete script |

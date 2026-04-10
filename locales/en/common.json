@@ -139,8 +139,8 @@
     },
     "newScript": {
       "title": "New script",
-      "heading": "Script creation scaffold",
-      "description": "Editors and owners can already reach this page; the actual creation mutation remains HTTP-scaffolded in the API."
+      "heading": "Create a script",
+      "description": "Create a script, capture its metadata, and start building the outline."
     },
     "projectOverview": {
       "heading": "Project overview",
@@ -179,15 +179,56 @@
       "transferEmpty": "Add another active member before transferring ownership."
     },
     "script": {
+      "title": "Script overview",
       "heading": "Script overview",
-      "description": "Outline, scenes, and editor entry points are connected to real models and placeholder APIs."
+      "description": "Manage metadata, structure the outline, and move into the editor shell when you are ready."
+    },
+    "scriptFields": {
+      "title": "Title",
+      "status": "Status",
+      "description": "Description",
+      "genre": "Genre",
+      "language": "Language",
+      "authors": "Authors",
+      "authorsHelp": "Credits are stored in order and can be rearranged.",
+      "created": "Created",
+      "updated": "Updated",
+      "totalNodes": "Outline nodes",
+      "totalScenes": "Scenes"
+    },
+    "scriptSections": {
+      "metadata": "Script metadata",
+      "metadataHelp": "This form controls the script-level fields that are durable in the API.",
+      "numbering": "Scene numbering",
+      "numberingHelp": "Choose whether scene numbers are hidden, automatic, or frozen for production planning.",
+      "summary": "Script summary",
+      "outlineMode": "Numbering mode",
+      "dropHint": "Drop a node here to append it inside this container."
+    },
+    "scriptActions": {
+      "createScript": "Create script",
+      "cancel": "Cancel",
+      "addAuthor": "Add author",
+      "moveUp": "Up",
+      "moveDown": "Down",
+      "remove": "Remove",
+      "dangerZone": "Danger zone",
+      "deleteHelp": "Deleting a script removes its outline, placeholder scenes, notes, and versions.",
+      "deleteScript": "Delete script",
+      "backToOverview": "Back to script overview",
+      "addAct": "Add act",
+      "addBeat": "Add beat",
+      "addScene": "Add scene",
+      "rename": "Rename",
+      "delete": "Delete"
     },
     "editor": {
       "heading": "Editor shell scaffold",
       "description": "The collaborative editor itself is deferred, but the shell, room contract, and role-aware editability are ready.",
       "socketNamespace": "Socket namespace",
       "canEdit": "This user can edit in future collaboration flows.",
-      "readOnly": "This user joins the scene in read-only mode."
+      "readOnly": "This user joins the scene in read-only mode.",
+      "placeholderBody": "The screenplay body editor is intentionally deferred in this PR. This shell keeps the outline sidebar, script presence, and future editor mount point ready."
     },
     "todo": {
       "title": "Foundation placeholder",

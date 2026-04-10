@@ -31,6 +31,16 @@ export const listProjectActivity = ({ projectId, limit = 20 }) =>
     .sort({ createdAt: -1 })
     .limit(limit);
 
+export const listScriptActivity = ({ projectId, scriptPublicId, limit = 20 }) =>
+  ActivityEvent.find({
+    projectId,
+    'payload.scriptId': scriptPublicId
+  })
+    .populate('actorId', 'publicId username displayName avatarUrl')
+    .populate('projectId', 'publicId name')
+    .sort({ createdAt: -1 })
+    .limit(limit);
+
 export const listProjectsActivity = ({ projectIds, limit = 10 }) =>
   ActivityEvent.find({ projectId: { $in: projectIds } })
     .populate('actorId', 'publicId username displayName avatarUrl')

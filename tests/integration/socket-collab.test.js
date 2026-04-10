@@ -1,7 +1,7 @@
 import { io as createClient } from 'socket.io-client';
 import supertest from 'supertest';
 
-import { ProjectMember, User } from '../../src/models/index.js';
+import { User } from '../../src/models/index.js';
 import { getPageCsrfToken, loginAsUser, seedFixtures, startTestStack } from '../support/helpers.js';
 
 const connectSocket = (baseUrl, cookieHeader) =>

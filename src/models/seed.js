@@ -196,11 +196,17 @@ export const seedDevelopmentData = async () => {
         publicId: seedFixtures.script.publicId,
         projectId: project._id,
         title: seedFixtures.script.title,
+        description: 'Seeded script for outline and editor-shell development.',
+        genre: 'Drama',
         slug: 'pilot-episode',
         status: 'draft',
+        language: 'en',
+        authors: ['Olivia Owner', 'Eddie Editor'],
+        majorSaveSequence: 0,
+        currentVersionLabel: null,
         sceneNumberMode: 'auto',
-        createdById: owner._id,
-        updatedById: owner._id
+        createdByUserId: owner._id,
+        updatedByUserId: owner._id
       }
     },
     { upsert: true, new: true, setDefaultsOnInsert: true }
@@ -214,6 +220,12 @@ export const seedDevelopmentData = async () => {
         projectId: project._id,
         scriptId: script._id,
         title: seedFixtures.scenes.intro.title,
+        structuredBody: {
+          blocks: [],
+          cachedSlugline: null,
+          characterRefs: [],
+          locationRefs: []
+        },
         headContent: 'A team of writers gathers around a whiteboard.',
         headUpdatedAt: new Date()
       }

@@ -7,6 +7,7 @@ import { initProfileForm } from './profile-form.js';
 import { initProjectCreateForm } from './project-create-form.js';
 import { initProjectPresence } from './project-presence.js';
 import { initProjectSettingsForms } from './project-settings.js';
+import { initScriptSurfaces } from './script-surfaces.js';
 
 window.csrfFetch = csrfFetch;
 
@@ -19,4 +20,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initMemberManagement();
   initProjectSettingsForms();
   initProjectPresence();
+  initScriptSurfaces();
 });
