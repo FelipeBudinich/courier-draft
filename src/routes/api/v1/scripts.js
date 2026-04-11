@@ -9,6 +9,7 @@ import {
 } from '../../../middleware/auth.js';
 import { loadScript } from '../../../middleware/resources.js';
 import { validate } from '../../../middleware/validation.js';
+import { createActionKey, runSingleFlight } from '../../../services/ops/idempotency.js';
 import {
   createOutlineNode,
   deleteOutlineNode,
@@ -202,10 +203,18 @@ router.post(
   loadScript,
   requireProjectRole('editor'),
   asyncRoute(async (req, res) => {
-    const result = await majorSaveScript({
-      project: req.project,
-      script: req.script,
-      actor: req.currentUser
+    const result = await runSingleFlight({
+      key: createActionKey(
+        'script-major-save',
+        String(req.currentUser._id),
+        String(req.script._id)
+      ),
+      action: () =>
+        majorSaveScript({
+          project: req.project,
+          script: req.script,
+          actor: req.currentUser
+        })
     });
 
     sendApiOk(

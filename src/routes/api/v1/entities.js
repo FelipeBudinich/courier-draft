@@ -9,7 +9,7 @@ import {
 } from '../../../middleware/auth.js';
 import { validate } from '../../../middleware/validation.js';
 import { findProjectEntityByPublicId } from '../../../models/lookups.js';
-import { rebuildProjectEntityRegistry } from '../../../services/entities/entity-registry-rebuild.js';
+import { createActionKey, runSingleFlight } from '../../../services/ops/idempotency.js';
 import {
   assertProjectScriptFilter,
   createManualProjectEntity,
@@ -112,10 +112,6 @@ router.get(
       return;
     }
 
-    await rebuildProjectEntityRegistry({
-      projectId: req.project._id
-    });
-
     const entities = await listProjectEntities({
       project: req.project,
       type: req.query.type,
@@ -200,11 +196,21 @@ router.post(
       throw notFound('Target entity not found.');
     }
 
-    const result = await mergeProjectEntities({
-      project: req.project,
-      actor: req.currentUser,
-      sourceEntity: req.entity,
-      targetEntity
+    const result = await runSingleFlight({
+      key: createActionKey(
+        'entity-merge',
+        String(req.currentUser._id),
+        String(req.project._id),
+        String(req.entity._id),
+        String(targetEntity._id)
+      ),
+      action: () =>
+        mergeProjectEntities({
+          project: req.project,
+          actor: req.currentUser,
+          sourceEntity: req.entity,
+          targetEntity
+        })
     });
 
     sendApiOk(res, {

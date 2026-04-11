@@ -22,11 +22,19 @@
     "entities": "Entidades",
     "audit": "Auditoría"
   },
+  "filters": {
+    "all": "Todo",
+    "invites": "Invitaciones",
+    "membership": "Cambios de membresía",
+    "membershipChanges": "Cambios de membresía",
+    "activity": "Actividad"
+  },
   "shared": {
     "buttons": {
       "login": "Iniciar sesión",
       "openProject": "Abrir proyecto",
       "openScript": "Abrir guion",
+      "open": "Abrir",
       "openEditor": "Abrir editor",
       "exportPdf": "Exportar PDF",
       "save": "Guardar",
@@ -39,7 +47,11 @@
       "cancelInvite": "Cancelar invitación",
       "transferOwnership": "Transferir propiedad",
       "readDocs": "Leer la documentación de arquitectura",
-      "switchLocale": "Cambiar idioma"
+      "switchLocale": "Cambiar idioma",
+      "markRead": "Marcar como leído",
+      "markAllRead": "Marcar todo como leído",
+      "previous": "Anterior",
+      "next": "Siguiente"
     },
     "labels": {
       "email": "Correo",
@@ -56,7 +68,9 @@
       "updatedAt": "Actualizado",
       "createdAt": "Creado",
       "requestId": "ID de solicitud",
-      "returnTo": "Volver a"
+      "returnTo": "Volver a",
+      "unread": "Sin leer",
+      "pagination": "Paginación"
     },
     "badges": {
       "owner": "Propietario",
@@ -114,8 +128,10 @@
     },
     "inbox": {
       "title": "Bandeja",
-      "heading": "Bandeja de invitaciones",
-      "description": "Revisa las invitaciones pendientes y decide en qué proyectos quieres colaborar."
+      "heading": "Centro de notificaciones",
+      "description": "Sigue invitaciones, cambios de acceso y actividad reciente entre proyectos en un solo lugar.",
+      "emptyHeading": "Tu bandeja está al día",
+      "emptyBody": "Las nuevas invitaciones y las actualizaciones importantes aparecerán aquí."
     },
     "settingsProfile": {
       "title": "Perfil",

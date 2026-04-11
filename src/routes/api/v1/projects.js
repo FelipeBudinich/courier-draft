@@ -9,6 +9,7 @@ import {
 } from '../../../middleware/auth.js';
 import { validate } from '../../../middleware/validation.js';
 import { createProjectInvite } from '../../../services/invites/service.js';
+import { createActionKey, runSingleFlight } from '../../../services/ops/idempotency.js';
 import {
   changeMemberRole,
   createProjectForUser,
@@ -69,7 +70,10 @@ router.get(
     });
 
     sendApiOk(res, {
-      projects: dashboard.projects
+      projects: dashboard.projects,
+      invites: dashboard.invites,
+      unreadSummary: dashboard.unreadSummary,
+      activity: dashboard.activity
     });
   })
 );
@@ -158,12 +162,22 @@ router.post(
   loadProjectMembership,
   requireProjectRole('owner'),
   asyncRoute(async (req, res) => {
-    const member = await createProjectInvite({
-      project: req.project,
-      actor: req.currentUser,
-      role: req.body.role,
-      userId: req.body.userId,
-      identifier: req.body.identifier
+    const member = await runSingleFlight({
+      key: createActionKey(
+        'project-invite',
+        String(req.currentUser._id),
+        String(req.project._id),
+        req.body.userId ?? req.body.identifier,
+        req.body.role
+      ),
+      action: () =>
+        createProjectInvite({
+          project: req.project,
+          actor: req.currentUser,
+          role: req.body.role,
+          userId: req.body.userId,
+          identifier: req.body.identifier
+        })
     });
 
     sendApiOk(
@@ -241,11 +255,16 @@ router.get(
   loadProjectMembership,
   asyncRoute(async (req, res) => {
     const activity = await getProjectActivityReadModel({
-      projectId: req.project._id
+      projectId: req.project._id,
+      limit: 25,
+      filter: req.query.type ? String(req.query.type) : 'all',
+      page: req.query.page ? Number.parseInt(String(req.query.page), 10) : 1
     });
 
     sendApiOk(res, {
-      activity
+      activity: activity.items,
+      filter: activity.filter,
+      pagination: activity.pagination
     });
   })
 );

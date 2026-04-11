@@ -1,5 +1,6 @@
 import { csrfFetch } from '../csrf-fetch.js';
 import { getErrorMessage, readJson } from '../form-helpers.js';
+import { showConfirmDialog } from '../ui/dialog-focus.js';
 
 const escapeHtml = (value = '') =>
   String(value)
@@ -223,7 +224,11 @@ const bindRootInteractions = (state) => {
 
   state.root?.querySelectorAll('[data-scene-version-restore]').forEach((button) => {
     button.addEventListener('click', async () => {
-      const confirmed = window.confirm('Restore this scene version?');
+      const confirmed = await showConfirmDialog({
+        title: 'Restore scene version',
+        description: 'Restore this scene version as the current head?',
+        confirmText: 'Restore version'
+      });
       if (!confirmed) {
         return;
       }

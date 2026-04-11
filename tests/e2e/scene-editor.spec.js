@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { resetE2EState } from './helpers.js';
 
 const PROJECT_ID = 'prj_foundation_demo';
 const SCRIPT_ID = 'scr_pilot_demo';
@@ -20,6 +21,10 @@ const openSceneEditor = async (page, email) => {
   await expect(page.locator('.ProseMirror')).toBeVisible();
 };
 
+test.beforeEach(async ({ request }) => {
+  await resetE2EState(request);
+});
+
 const appendActionLine = async (page, text) => {
   const editor = page.locator('.ProseMirror');
   await editor.click();
@@ -29,9 +34,10 @@ const appendActionLine = async (page, text) => {
 };
 
 const acceptConfirm = async (page, trigger) => {
-  const dialogPromise = page.waitForEvent('dialog').then((dialog) => dialog.accept());
   await trigger.click();
-  await dialogPromise;
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: /restore version/i }).click();
 };
 
 test('two editors collaborate live, show presence, and reload into persisted scene content', async ({

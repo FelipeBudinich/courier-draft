@@ -22,11 +22,19 @@
     "entities": "Entities",
     "audit": "Audit"
   },
+  "filters": {
+    "all": "All",
+    "invites": "Invites",
+    "membership": "Membership changes",
+    "membershipChanges": "Membership changes",
+    "activity": "Activity"
+  },
   "shared": {
     "buttons": {
       "login": "Sign in",
       "openProject": "Open project",
       "openScript": "Open script",
+      "open": "Open",
       "openEditor": "Open editor shell",
       "exportPdf": "Export PDF",
       "save": "Save",
@@ -39,7 +47,11 @@
       "cancelInvite": "Cancel invite",
       "transferOwnership": "Transfer ownership",
       "readDocs": "Read the architecture docs",
-      "switchLocale": "Switch locale"
+      "switchLocale": "Switch locale",
+      "markRead": "Mark read",
+      "markAllRead": "Mark all read",
+      "previous": "Previous",
+      "next": "Next"
     },
     "labels": {
       "email": "Email",
@@ -56,7 +68,9 @@
       "updatedAt": "Updated",
       "createdAt": "Created",
       "requestId": "Request ID",
-      "returnTo": "Return to"
+      "returnTo": "Return to",
+      "unread": "Unread",
+      "pagination": "Pagination"
     },
     "badges": {
       "owner": "Owner",
@@ -114,8 +128,10 @@
     },
     "inbox": {
       "title": "Inbox",
-      "heading": "Invite inbox",
-      "description": "Review pending project invitations and decide where you want to collaborate next."
+      "heading": "Notification center",
+      "description": "Track invites, access changes, and recent cross-project activity in one place.",
+      "emptyHeading": "Your inbox is clear",
+      "emptyBody": "New invites and important collaboration updates will appear here."
     },
     "settingsProfile": {
       "title": "Profile",

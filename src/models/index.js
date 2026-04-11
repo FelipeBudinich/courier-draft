@@ -1,6 +1,7 @@
 export { ActivityEvent } from './activity-event.js';
 export { AuditLog } from './audit-log.js';
 export { DocumentVersion } from './document-version.js';
+export { InboxReadState } from './inbox-read-state.js';
 export { Note } from './note.js';
 export { OutlineNode } from './outline-node.js';
 export { ProjectEntity } from './project-entity.js';

@@ -12,6 +12,7 @@ import {
   consumeFlash,
   exposeTemplateGlobals,
   loadCurrentUser,
+  loadInboxSummary,
   loadLocale
 } from './middleware/request-context.js';
 import { enforceOnboarding } from './middleware/auth.js';
@@ -23,7 +24,11 @@ import fragmentsRouter from './routes/fragments/index.js';
 import opsRouter from './routes/ops.js';
 import webRouter from './routes/web/index.js';
 
-export const createApp = ({ sessionStore, disableRateLimit = false } = {}) => {
+export const createApp = ({
+  sessionStore,
+  disableRateLimit = false,
+  configureApp = null
+} = {}) => {
   const app = express();
 
   if (env.trustProxy) {
@@ -68,9 +73,14 @@ export const createApp = ({ sessionStore, disableRateLimit = false } = {}) => {
   app.use(loadCurrentUser);
   app.use(loadLocale);
   app.use(consumeFlash);
+  app.use(loadInboxSummary);
   app.use(exposeTemplateGlobals);
   app.use(attachCsrfToken);
   app.use(csrfProtection);
+
+  if (typeof configureApp === 'function') {
+    configureApp(app);
+  }
 
   app.use(opsRouter);
   app.use(enforceOnboarding);

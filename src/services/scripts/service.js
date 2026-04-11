@@ -254,6 +254,7 @@ export const updateScriptMetadata = async ({
   validateScriptTitle(normalizedInput.title);
 
   const changedFields = [];
+  const updates = {};
   const fieldNames = ['title', 'description', 'genre', 'status', 'language', 'authors'];
 
   fieldNames.forEach((fieldName) => {
@@ -266,6 +267,7 @@ export const updateScriptMetadata = async ({
 
     if (changed) {
       changedFields.push(fieldName);
+      updates[fieldName] = nextValue;
       script[fieldName] = nextValue;
     }
   });
@@ -281,8 +283,21 @@ export const updateScriptMetadata = async ({
   const session = await mongoose.startSession();
   try {
     await session.withTransaction(async () => {
-      script.updatedByUserId = actor._id;
-      await script.save({ session });
+      script.updatedByUserId = actor;
+      await Script.updateOne(
+        {
+          _id: script._id
+        },
+        {
+          $set: {
+            ...updates,
+            updatedByUserId: actor._id
+          }
+        },
+        {
+          session
+        }
+      );
 
       activityEvent = await createScriptActivityAndAudit({
         project,
@@ -469,6 +484,9 @@ export const deleteScript = async ({
     scriptPublicId: script.publicId,
     activityEvent,
     actor
+  });
+  await rebuildProjectEntityRegistry({
+    projectId: project._id
   });
 
   return {

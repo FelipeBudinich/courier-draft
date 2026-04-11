@@ -1,6 +1,8 @@
 import { createCollabClient } from './collab-client.js';
 import { csrfFetch } from './csrf-fetch.js';
 import { getErrorMessage, readJson } from './form-helpers.js';
+import { showConfirmDialog } from './ui/dialog-focus.js';
+import { announce } from './ui/live-announcer.js';
 
 const DETAIL_EMPTY_MESSAGE = 'Select a note to view details.';
 let noteRealtimeProviderModulePromise = null;
@@ -387,8 +389,12 @@ const copyNoteText = async (state, noteId) => {
         ? state.activeNoteDetail
         : await fetchNoteDetail(state, noteId);
     await navigator.clipboard.writeText(note.headText ?? '');
+    setDetailStatus(state, 'Note copied to clipboard.');
+    announce('Note copied to clipboard.');
   } catch (error) {
-    window.alert(error.message ?? 'Note text could not be copied.');
+    const message = error.message ?? 'Note text could not be copied.';
+    setDetailStatus(state, message, true);
+    announce(message, 'assertive');
   }
 };
 
@@ -448,7 +454,11 @@ const bindDetailActions = async (state) => {
   });
 
   detail.querySelector('[data-note-delete]')?.addEventListener('click', async () => {
-    const confirmed = window.confirm('Delete this note?');
+    const confirmed = await showConfirmDialog({
+      title: 'Delete note',
+      description: 'Delete this note? This action cannot be undone.',
+      confirmText: 'Delete note'
+    });
     if (!confirmed) {
       return;
     }
@@ -559,7 +569,11 @@ const bindDetailActions = async (state) => {
 
   detail.querySelectorAll('[data-note-version-restore]').forEach((button) => {
     button.addEventListener('click', async () => {
-      const confirmed = window.confirm('Restore this note version?');
+      const confirmed = await showConfirmDialog({
+        title: 'Restore note version',
+        description: 'Restore this note version as the current head?',
+        confirmText: 'Restore version'
+      });
       if (!confirmed) {
         return;
       }

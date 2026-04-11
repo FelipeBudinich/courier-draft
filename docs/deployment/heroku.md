@@ -5,8 +5,9 @@ Courier Draft ships a production-ready baseline for Heroku with:
 - `Procfile` using `npm start`
 - `heroku-postbuild` running the Tailwind build
 - secure cookie/session defaults
-- readiness checks that fail when Mongo is disconnected
+- readiness checks that fail when Mongo is disconnected or export runtime dependencies are missing
 - on-demand Playwright/Chromium PDF export
+- an SSR inbox/dashboard notification read model with live fragment refresh
 
 ## Required environment variables
 
@@ -35,6 +36,7 @@ Set these in Heroku config vars:
 2. Add the Heroku outbound IP rules you require, or use an Atlas network policy that matches your environment.
 3. Store the full Atlas connection string in `MONGODB_URI`.
 4. Verify `/readyz` returns `200` after deployment.
+5. Verify `/readyz` reports both `checks.mongo=true` and `checks.exportRuntime=true`.
 
 ## WebSockets on Heroku
 
@@ -74,6 +76,7 @@ Recommended setup:
 Operational notes:
 
 - export is generated on demand and not persisted in MongoDB
+- duplicate export submissions collapse in-flight work per user/script/request payload
 - partial exports preserve canonical standard page numbers, so full-script pagination still needs accurate live scene heads
 - if a live collaborative scene flush fails, export fails instead of emitting stale content
 
@@ -84,16 +87,26 @@ Operational notes:
 3. `npm test`
 4. Push to Heroku or GitHub-connected deploy target.
 5. Run `npm run seed` against the target database only if you want development/demo data.
+6. Complete the smoke checklist in `docs/release-checklist.md`.
 
 ## Smoke checks after deploy
 
 - `GET /healthz` returns `200`
 - `GET /readyz` returns `200`
+- `/readyz` includes export runtime details and reports `checks.exportRuntime=true`
 - `/login` renders
 - Google sign-in completes with a verified Google account
 - locale switching updates the locale cookie
 - `/app` loads after authentication
+- `/app` shows the inbox summary and recent activity
+- `/inbox` shows unread invites/activity and can mark items read
 - `/collab` rejects unauthenticated sockets
 - standard screenplay PDF export succeeds
 - mobile `9:16` PDF export succeeds
 - Japanese text exports without missing-glyph fallback failures
+
+## Session and collaboration guardrails
+
+- Keep `TRUST_PROXY=true` and a strong `SESSION_SECRET` so secure cookies behave correctly behind Heroku routing.
+- Run a single web dyno for this MVP whenever collaborative editing or live inbox refresh matters.
+- If a dyno restart occurs during an active collaboration session, the client should reconnect and reload the persisted head; treat this as expected MVP behavior, not seamless multi-instance failover.

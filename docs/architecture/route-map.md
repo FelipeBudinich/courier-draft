@@ -153,9 +153,11 @@ These routes return JSON and should be treated as the main durable command/read 
 | PATCH | `/api/v1/me` | Auth | Update profile fields such as username |
 | PATCH | `/api/v1/me/preferences` | Auth | Persist locale and user preferences |
 | GET | `/api/v1/users/search?q=` | Auth | Search existing users by username or email |
-| GET | `/api/v1/invites` | Auth | List current user invites |
+| GET | `/api/v1/invites` | Auth | List current user invites with read metadata |
 | POST | `/api/v1/invites/:inviteId/accept` | Auth | Accept an invite |
 | POST | `/api/v1/invites/:inviteId/decline` | Auth | Decline an invite |
+| POST | `/api/v1/inbox/read-all` | Auth | Mark the current user's inbox items read up to now |
+| POST | `/api/v1/inbox/items/:itemId/read` | Auth | Mark one derived inbox item read |
 
 ---
 
@@ -172,7 +174,7 @@ These routes return JSON and should be treated as the main durable command/read 
 | PATCH | `/api/v1/projects/:projectId/members/:memberId` | Owner | Change member role |
 | DELETE | `/api/v1/projects/:projectId/members/:memberId` | Owner | Remove member |
 | POST | `/api/v1/projects/:projectId/ownership-transfer` | Owner | Transfer ownership |
-| GET | `/api/v1/projects/:projectId/activity` | Member | Activity feed JSON |
+| GET | `/api/v1/projects/:projectId/activity` | Member | Activity feed JSON with `type` and `page` support |
 | GET | `/api/v1/projects/:projectId/audit` | Owner | Audit log JSON |
 
 ---
@@ -235,6 +237,7 @@ These routes return JSON and should be treated as the main durable command/read 
   - selected acts/scenes export
   - standard US Letter export
   - 9:16 export
+- Inbox reads remain derived from invites and activity. `POST /api/v1/inbox/read-all` and `POST /api/v1/inbox/items/:itemId/read` only mutate read markers, not the source business events.
 - Scene body content realtime sync is not represented as generic scene `PATCH` requests. That belongs to the collaborative document layer.
 
 ---
@@ -246,6 +249,8 @@ These routes return partial HTML for dynamic UI updates in a no-React applicatio
 | Method | Path | Access | Purpose |
 |---|---|---:|---|
 | GET | `/fragments/inbox/invites` | Auth | Invite list partial |
+| GET | `/fragments/inbox/items` | Auth | Unified inbox item list partial |
+| GET | `/fragments/inbox/summary` | Auth | Inbox unread summary and filter chips |
 | GET | `/fragments/projects/:projectId/activity-feed` | Member | Activity feed partial |
 | GET | `/fragments/projects/:projectId/members/list` | Member | Members list partial |
 | GET | `/fragments/projects/:projectId/scripts/:scriptId/outline-tree` | Member | Outline sidebar partial |
@@ -257,6 +262,7 @@ These routes return partial HTML for dynamic UI updates in a no-React applicatio
 - These routes are useful for HTMX-style or fetch-and-swap patterns.
 - They should render from the same source templates/partials used in SSR pages when possible.
 - They should never bypass permission checks.
+- Inbox fragments should stay consistent with `/api/v1/invites` by rendering from the same derived read model.
 
 ---
 

@@ -10,7 +10,6 @@ import {
 import { loadScript } from '../../middleware/resources.js';
 import { findSceneByPublicId } from '../../models/lookups.js';
 import { sceneSessionManager } from '../../services/collab/scene-session-manager.js';
-import { rebuildProjectEntityRegistry } from '../../services/entities/entity-registry-rebuild.js';
 import { getNotesPanelModel } from '../../services/notes/service.js';
 import { getScriptDetailReadModel } from '../../services/scripts/service.js';
 import { SCENE_TEXT_BLOCK_TYPES } from '../../services/scenes/document-constants.js';
@@ -88,9 +87,6 @@ router.get(
   loadScript,
   asyncRoute(async (req, res) => {
     const t = res.locals.t;
-    await rebuildProjectEntityRegistry({
-      projectId: req.project._id
-    });
     const detail = await getScriptDetailReadModel({
       project: req.project,
       script: req.script,

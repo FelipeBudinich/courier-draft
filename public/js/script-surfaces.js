@@ -1,6 +1,9 @@
 import { createCollabClient } from './collab-client.js';
 import { csrfFetch } from './csrf-fetch.js';
 import { getErrorMessage, readJson, setFormStatus } from './form-helpers.js';
+import { showConfirmDialog, showPromptDialog } from './ui/dialog-focus.js';
+import { announce } from './ui/live-announcer.js';
+import { runOnce } from './ui/once-action.js';
 
 const createAuthorRow = (value = '') => {
   const row = document.createElement('div');
@@ -113,6 +116,17 @@ const reloadOutlineFragment = async (shell) => {
   fragmentTarget.innerHTML = await response.text();
 };
 
+const setPanelStatus = (scope, message, isError = false) => {
+  const node = scope?.querySelector?.('[data-form-status]');
+  if (!node) {
+    return;
+  }
+
+  node.textContent = message ?? '';
+  node.classList.toggle('text-red-700', isError);
+  node.classList.toggle('text-ink/55', !isError);
+};
+
 const initScriptCreateForm = () => {
   const form = document.querySelector('[data-script-create-form]');
   if (!form) {
@@ -206,25 +220,39 @@ const initSceneNumberForms = () => {
 const initScriptDeleteButtons = () => {
   document.querySelectorAll('[data-script-delete]').forEach((button) => {
     button.addEventListener('click', async () => {
-      const confirmed = window.confirm('Delete this script and its outline?');
+      const confirmed = await showConfirmDialog({
+        title: 'Delete script',
+        description: 'Delete this script and its outline? This cannot be undone.',
+        confirmText: 'Delete script'
+      });
       if (!confirmed) {
         return;
       }
 
-      const response = await csrfFetch(
-        `/api/v1/projects/${button.dataset.projectId}/scripts/${button.dataset.scriptId}`,
-        {
-          method: 'DELETE'
+      setPanelStatus(button.closest('.panel'), 'Deleting script…');
+
+      await runOnce({
+        element: button,
+        busyText: 'Deleting…',
+        action: async () => {
+          const response = await csrfFetch(
+            `/api/v1/projects/${button.dataset.projectId}/scripts/${button.dataset.scriptId}`,
+            {
+              method: 'DELETE'
+            }
+          );
+          const result = await readJson(response);
+
+          if (!response.ok || !result?.ok) {
+            const message = getErrorMessage(result, 'Script could not be deleted.');
+            setPanelStatus(button.closest('.panel'), message, true);
+            announce(message, 'assertive');
+            return;
+          }
+
+          window.location.assign(button.dataset.redirectUrl);
         }
-      );
-      const result = await readJson(response);
-
-      if (!response.ok || !result?.ok) {
-        window.alert(getErrorMessage(result, 'Script could not be deleted.'));
-        return;
-      }
-
-      window.location.assign(button.dataset.redirectUrl);
+      });
     });
   });
 };
@@ -323,6 +351,7 @@ const initExportForms = () => {
       event.preventDefault();
 
       const payload = buildExportRequestBody(form);
+      const submitButton = form.querySelector('button[type="submit"]');
 
       if (
         payload.selection.kind === 'partial' &&
@@ -335,26 +364,37 @@ const initExportForms = () => {
 
       setFormStatus(form, 'Generating PDF…');
 
-      const response = await csrfFetch(
-        `/api/v1/projects/${form.dataset.projectId}/scripts/${form.dataset.scriptId}/exports/pdf`,
-        {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        }
-      );
+      try {
+        await runOnce({
+          element: submitButton,
+          busyText: 'Exporting…',
+          action: async () => {
+            const response = await csrfFetch(
+              `/api/v1/projects/${form.dataset.projectId}/scripts/${form.dataset.scriptId}/exports/pdf`,
+              {
+                method: 'POST',
+                body: JSON.stringify(payload)
+              }
+            );
 
-      if (!response.ok) {
-        const result = await readJson(response);
-        setFormStatus(form, getErrorMessage(result, 'PDF export failed.'), true);
-        return;
+            if (!response.ok) {
+              const result = await readJson(response);
+              throw new Error(getErrorMessage(result, 'PDF export failed.'));
+            }
+
+            const blob = await response.blob();
+            triggerBlobDownload({
+              blob,
+              filename: parseDownloadFilename(response.headers.get('Content-Disposition'))
+            });
+            setFormStatus(form, 'Download started.');
+            announce('PDF export started.');
+          }
+        });
+      } catch (error) {
+        setFormStatus(form, error.message || 'PDF export failed.', true);
+        announce(error.message || 'PDF export failed.', 'assertive');
       }
-
-      const blob = await response.blob();
-      triggerBlobDownload({
-        blob,
-        filename: parseDownloadFilename(response.headers.get('Content-Disposition'))
-      });
-      setFormStatus(form, 'Download started.');
     });
   });
 };
@@ -371,7 +411,12 @@ const initOutlineInteractions = () => {
   fragmentTarget.addEventListener('click', async (event) => {
     const createButton = event.target.closest('[data-outline-create]');
     if (createButton) {
-      const title = window.prompt('Node title');
+      const title = await showPromptDialog({
+        title: 'Create outline node',
+        description: 'Choose a title for the new outline node.',
+        label: 'Node title',
+        confirmText: 'Create'
+      });
       if (!title) {
         return;
       }
@@ -390,17 +435,26 @@ const initOutlineInteractions = () => {
       const result = await readJson(response);
 
       if (!response.ok || !result?.ok) {
-        window.alert(getErrorMessage(result, 'Outline node could not be created.'));
+        const message = getErrorMessage(result, 'Outline node could not be created.');
+        setPanelStatus(fragmentTarget, message, true);
+        announce(message, 'assertive');
         return;
       }
 
       await reloadOutlineFragment(shell);
+      announce('Outline updated.');
       return;
     }
 
     const renameButton = event.target.closest('[data-outline-rename]');
     if (renameButton) {
-      const title = window.prompt('Rename node', renameButton.dataset.currentTitle || '');
+      const title = await showPromptDialog({
+        title: 'Rename outline node',
+        description: 'Update the title for this outline node.',
+        label: 'Node title',
+        initialValue: renameButton.dataset.currentTitle || '',
+        confirmText: 'Rename'
+      });
       if (!title) {
         return;
       }
@@ -417,17 +471,24 @@ const initOutlineInteractions = () => {
       const result = await readJson(response);
 
       if (!response.ok || !result?.ok) {
-        window.alert(getErrorMessage(result, 'Outline node could not be renamed.'));
+        const message = getErrorMessage(result, 'Outline node could not be renamed.');
+        setPanelStatus(fragmentTarget, message, true);
+        announce(message, 'assertive');
         return;
       }
 
       await reloadOutlineFragment(shell);
+      announce('Outline updated.');
       return;
     }
 
     const deleteButton = event.target.closest('[data-outline-delete]');
     if (deleteButton) {
-      const confirmed = window.confirm(`Delete this ${deleteButton.dataset.nodeType}?`);
+      const confirmed = await showConfirmDialog({
+        title: 'Delete outline node',
+        description: `Delete this ${deleteButton.dataset.nodeType}?`,
+        confirmText: 'Delete'
+      });
       if (!confirmed) {
         return;
       }
@@ -441,11 +502,14 @@ const initOutlineInteractions = () => {
       const result = await readJson(response);
 
       if (!response.ok || !result?.ok) {
-        window.alert(getErrorMessage(result, 'Outline node could not be deleted.'));
+        const message = getErrorMessage(result, 'Outline node could not be deleted.');
+        setPanelStatus(fragmentTarget, message, true);
+        announce(message, 'assertive');
         return;
       }
 
       await reloadOutlineFragment(shell);
+      announce('Outline updated.');
     }
   });
 
@@ -516,11 +580,14 @@ const initOutlineInteractions = () => {
     const result = await readJson(response);
 
     if (!response.ok || !result?.ok) {
-      window.alert(getErrorMessage(result, 'Outline node could not be moved.'));
+      const message = getErrorMessage(result, 'Outline node could not be moved.');
+      setPanelStatus(fragmentTarget, message, true);
+      announce(message, 'assertive');
       return;
     }
 
     await reloadOutlineFragment(shell);
+    announce('Outline updated.');
   });
 };
 

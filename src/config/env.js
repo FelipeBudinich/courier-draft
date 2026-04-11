@@ -37,8 +37,8 @@ export const env = {
   rateLimitWindowMs: parseNumber(process.env.RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000),
   rateLimitMax: parseNumber(process.env.RATE_LIMIT_MAX, 300),
   logLevel: process.env.LOG_LEVEL ?? (nodeEnv === 'test' ? 'silent' : 'info'),
-  errorReportingDsn: process.env.ERROR_REPORTING_DSN ?? ''
+  errorReportingDsn: process.env.ERROR_REPORTING_DSN ?? '',
+  loadInboxSummaryInTest: parseBoolean(process.env.LOAD_INBOX_SUMMARY_IN_TEST, false)
 };
 
 export const supportedLocales = ['en', 'es', 'ja'];
-

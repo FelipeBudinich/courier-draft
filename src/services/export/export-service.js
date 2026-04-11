@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
-import { badRequest } from '../../config/errors.js';
+import { AppError, badRequest } from '../../config/errors.js';
+import { logger } from '../../config/logger.js';
 import { createActivityEvent } from '../activity/service.js';
 import { createAuditLog } from '../audit/service.js';
 import { emitScriptActivity } from '../scripts/helpers.js';
@@ -16,6 +17,55 @@ import { buildStandardRenderModel } from './standard-render-model.js';
 import { renderExportTemplate } from './template-render-service.js';
 import { createPlaywrightTextMeasure } from './text-measure.js';
 import { buildTitlePageModel } from './title-page-service.js';
+
+const EXPORT_TIMEOUT_MS = 60_000;
+
+const withTimeout = async (promise, timeoutMs, timeoutMessage) => {
+  let timeoutHandle = null;
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timeoutHandle = setTimeout(() => {
+          reject(
+            new AppError({
+              statusCode: 503,
+              code: 'EXPORT_TIMEOUT',
+              message: timeoutMessage
+            })
+          );
+        }, timeoutMs);
+      })
+    ]);
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
+  }
+};
+
+const classifyExportError = (error) => {
+  if (error instanceof AppError) {
+    return error;
+  }
+
+  const message = String(error?.message ?? '');
+
+  if (/Executable doesn't exist|browserType\.launch|Failed to launch/i.test(message)) {
+    return new AppError({
+      statusCode: 503,
+      code: 'EXPORT_RUNTIME_UNAVAILABLE',
+      message: 'PDF export is unavailable because the browser runtime is not ready.'
+    });
+  }
+
+  return new AppError({
+    statusCode: 500,
+    code: 'EXPORT_FAILED',
+    message: 'PDF export failed. Please try again in a moment.'
+  });
+};
 
 const buildMobileBlockStream = ({
   blockStream,
@@ -125,131 +175,158 @@ export const exportScriptPdf = async ({
   script,
   actor,
   locale,
-  input
+  input,
+  requestId = null
 }) => {
-  const exportRequest = parseExportRequest(input);
-  const exportDate = new Date();
-  const exportContext = await loadCanonicalScriptExportContext({
-    project,
-    script
-  });
-
-  if (!exportContext.canonicalSceneEntries.length) {
-    throw badRequest('This script has no scenes to export.');
-  }
-
-  const selection = resolveExportSelection({
-    selection: exportRequest.selection,
-    outlineNodes: exportContext.outlineNodes,
-    canonicalSceneEntries: exportContext.canonicalSceneEntries
-  });
-  const assembly = await assembleCanonicalScriptBlocks({
-    canonicalSceneEntries: exportContext.canonicalSceneEntries
-  });
-  const titlePage = buildTitlePageModel({
-    project,
-    script,
-    locale,
-    exportDate,
-    selection
-  });
-  const filenames = buildExportFilename({
-    scriptTitle: script.title,
-    versionLabel: script.currentVersionLabel ?? 'Draft',
-    format: exportRequest.format
-  });
-
-  const pdfBuffer = await withPdfBrowserContext(async ({ context }) => {
-    const standardTextMeasure = await createPlaywrightTextMeasure({
-      context,
-      layoutProfile: resolveLayoutProfile('standard')
+  try {
+    const exportRequest = parseExportRequest(input);
+    const exportDate = new Date();
+    const exportContext = await loadCanonicalScriptExportContext({
+      project,
+      script
     });
-    let mobileTextMeasure = null;
 
-    try {
-      const standardDocumentModel = await paginateCanonicalBlockStream({
-        format: 'standard',
-        blockStream: assembly.blockStream,
-        textMeasure: standardTextMeasure
-      });
-
-      if (exportRequest.format === 'standard') {
-        const renderModel = buildStandardRenderModel({
-          locale,
-          project,
-          script,
-          titlePage,
-          selection,
-          standardDocumentModel
-        });
-        const html = await renderExportTemplate({
-          templateName: 'export/standard-pdf.njk',
-          templateContext: renderModel,
-          cssFiles: ['public/css/export-screenplay.css']
-        });
-
-        return renderPdfFromHtml({
-          context,
-          html,
-          layoutProfile: standardDocumentModel.layout
-        });
-      }
-
-      mobileTextMeasure = await createPlaywrightTextMeasure({
-        context,
-        layoutProfile: resolveLayoutProfile('mobile_9_16')
-      });
-
-      const mobileDocumentModel = await paginateCanonicalBlockStream({
-        format: 'mobile_9_16',
-        blockStream: buildMobileBlockStream({
-          blockStream: assembly.blockStream,
-          selection,
-          standardBlockPageMap: standardDocumentModel.blockPageMap
-        }),
-        textMeasure: mobileTextMeasure,
-        standardBlockPageMap: standardDocumentModel.blockPageMap
-      });
-      const renderModel = buildMobileRenderModel({
-        locale,
-        project,
-        script,
-        titlePage,
-        selection,
-        mobileDocumentModel
-      });
-      const html = await renderExportTemplate({
-        templateName: 'export/mobile-pdf.njk',
-        templateContext: renderModel,
-        cssFiles: ['public/css/export-mobile.css']
-      });
-
-      return renderPdfFromHtml({
-        context,
-        html,
-        layoutProfile: mobileDocumentModel.layout
-      });
-    } finally {
-      await standardTextMeasure.close();
-
-      if (mobileTextMeasure) {
-        await mobileTextMeasure.close();
-      }
+    if (!exportContext.canonicalSceneEntries.length) {
+      throw badRequest('This script has no scenes to export.');
     }
-  });
 
-  await createExportActivityAndAudit({
-    project,
-    script,
-    actor,
-    exportRequest,
-    selection
-  });
+    const selection = resolveExportSelection({
+      selection: exportRequest.selection,
+      outlineNodes: exportContext.outlineNodes,
+      canonicalSceneEntries: exportContext.canonicalSceneEntries
+    });
+    const assembly = await assembleCanonicalScriptBlocks({
+      canonicalSceneEntries: exportContext.canonicalSceneEntries
+    });
+    const titlePage = buildTitlePageModel({
+      project,
+      script,
+      locale,
+      exportDate,
+      selection
+    });
+    const filenames = buildExportFilename({
+      scriptTitle: script.title,
+      versionLabel: script.currentVersionLabel ?? 'Draft',
+      format: exportRequest.format
+    });
 
-  return {
-    format: exportRequest.format,
-    pdfBuffer,
-    contentDisposition: buildContentDisposition(filenames),
-    filename: filenames.unicodeFilename
-  };
+    const pdfBuffer = await withTimeout(
+      withPdfBrowserContext(async ({ context }) => {
+        const standardTextMeasure = await createPlaywrightTextMeasure({
+          context,
+          layoutProfile: resolveLayoutProfile('standard')
+        });
+        let mobileTextMeasure = null;
+
+        try {
+          const standardDocumentModel = await paginateCanonicalBlockStream({
+            format: 'standard',
+            blockStream: assembly.blockStream,
+            textMeasure: standardTextMeasure
+          });
+
+          if (exportRequest.format === 'standard') {
+            const renderModel = buildStandardRenderModel({
+              locale,
+              project,
+              script,
+              titlePage,
+              selection,
+              standardDocumentModel
+            });
+            const html = await renderExportTemplate({
+              templateName: 'export/standard-pdf.njk',
+              templateContext: renderModel,
+              cssFiles: ['public/css/export-screenplay.css']
+            });
+
+            return renderPdfFromHtml({
+              context,
+              html,
+              layoutProfile: standardDocumentModel.layout
+            });
+          }
+
+          mobileTextMeasure = await createPlaywrightTextMeasure({
+            context,
+            layoutProfile: resolveLayoutProfile('mobile_9_16')
+          });
+
+          const mobileDocumentModel = await paginateCanonicalBlockStream({
+            format: 'mobile_9_16',
+            blockStream: buildMobileBlockStream({
+              blockStream: assembly.blockStream,
+              selection,
+              standardBlockPageMap: standardDocumentModel.blockPageMap
+            }),
+            textMeasure: mobileTextMeasure,
+            standardBlockPageMap: standardDocumentModel.blockPageMap
+          });
+          const renderModel = buildMobileRenderModel({
+            locale,
+            project,
+            script,
+            titlePage,
+            selection,
+            mobileDocumentModel
+          });
+          const html = await renderExportTemplate({
+            templateName: 'export/mobile-pdf.njk',
+            templateContext: renderModel,
+            cssFiles: ['public/css/export-mobile.css']
+          });
+
+          return renderPdfFromHtml({
+            context,
+            html,
+            layoutProfile: mobileDocumentModel.layout
+          });
+        } finally {
+          await standardTextMeasure.close();
+
+          if (mobileTextMeasure) {
+            await mobileTextMeasure.close();
+          }
+        }
+      }),
+      EXPORT_TIMEOUT_MS,
+      'PDF export timed out. Please try again.'
+    );
+
+    await createExportActivityAndAudit({
+      project,
+      script,
+      actor,
+      exportRequest,
+      selection
+    });
+
+    return {
+      format: exportRequest.format,
+      pdfBuffer,
+      contentDisposition: buildContentDisposition(filenames),
+      filename: filenames.unicodeFilename
+    };
+  } catch (error) {
+    if (error?.statusCode && error.statusCode < 500) {
+      throw error;
+    }
+
+    const classifiedError = classifyExportError(error);
+
+    logger.error(
+      {
+        err: error,
+        requestId,
+        userId: actor.publicId,
+        projectId: project.publicId,
+        scriptId: script.publicId,
+        exportErrorCode: classifiedError.code
+      },
+      'Script PDF export failed'
+    );
+
+    throw classifiedError;
+  }
 };

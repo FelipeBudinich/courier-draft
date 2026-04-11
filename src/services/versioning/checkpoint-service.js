@@ -309,10 +309,25 @@ const createCheckpointAndSnapshots = async ({
         });
       }
 
+      await Script.updateOne(
+        {
+          _id: script._id
+        },
+        {
+          $set: {
+            majorSaveSequence: nextMajorSaveSequence,
+            currentVersionLabel: versionLabel,
+            updatedByUserId: actor._id
+          }
+        },
+        {
+          session: mongoSession
+        }
+      );
+
       script.majorSaveSequence = nextMajorSaveSequence;
       script.currentVersionLabel = versionLabel;
       script.updatedByUserId = actor._id;
-      await script.save({ session: mongoSession });
 
       scriptVersion.snapshotRefs = createdVersions.map((entry) =>
         buildSnapshotRef({

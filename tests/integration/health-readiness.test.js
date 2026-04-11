@@ -22,6 +22,11 @@ describe('health and readiness routes', () => {
     const readyResponse = await stack.request.get('/readyz');
     expect(readyResponse.status).toBe(200);
     expect(readyResponse.body.checks.mongo).toBe(true);
+    expect(readyResponse.body.checks.exportRuntime).toBe(true);
+    expect(readyResponse.body.details.exportRuntime.checks.chromium).toBe(true);
+    expect(readyResponse.body.details.exportRuntime.checks.japaneseFontFallbackConfigured).toBe(
+      true
+    );
   });
 
   it('fails readiness when Mongo disconnects', async () => {

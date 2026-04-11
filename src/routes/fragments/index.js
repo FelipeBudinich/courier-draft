@@ -5,7 +5,11 @@ import { loadProjectMembership, requireAuth } from '../../middleware/auth.js';
 import { loadScript } from '../../middleware/resources.js';
 import { getOutlineReadModel } from '../../services/outline/service.js';
 import { setSurface } from '../../middleware/request-context.js';
-import { listPendingInvitesForUser } from '../../services/invites/service.js';
+import {
+  buildUserInboxReadModel,
+  listPendingInboxInvites,
+  normalizeInboxFilter
+} from '../../services/inbox/inbox-read-model.js';
 import { getNotesPanelModel } from '../../services/notes/service.js';
 import {
   getProjectActivityReadModel,
@@ -23,12 +27,44 @@ router.get(
   '/inbox/invites',
   requireAuth,
   asyncRoute(async (req, res) => {
-    const invites = await listPendingInvitesForUser({
-      userId: req.currentUser._id
+    const invites = await listPendingInboxInvites({
+      user: req.currentUser
     });
 
     renderFragment(res, 'partials/invites-list.njk', {
       invites
+    });
+  })
+);
+
+router.get(
+  '/inbox/items',
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const inbox = await buildUserInboxReadModel({
+      user: req.currentUser,
+      filter: normalizeInboxFilter(req.query.filter),
+      page: req.query.page ? Number.parseInt(String(req.query.page), 10) : 1
+    });
+
+    renderFragment(res, 'partials/inbox-items.njk', {
+      inbox
+    });
+  })
+);
+
+router.get(
+  '/inbox/summary',
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const inbox = await buildUserInboxReadModel({
+      user: req.currentUser
+    });
+
+    renderFragment(res, 'partials/inbox-summary.njk', {
+      inboxSummary: inbox.summary,
+      inboxFilters: inbox.filters,
+      currentFilter: inbox.filter
     });
   })
 );
@@ -40,10 +76,16 @@ router.get(
   asyncRoute(async (req, res) => {
     const activity = await getProjectActivityReadModel({
       projectId: req.project._id,
-      limit: 10
+      limit: 25,
+      filter: req.query.type ? String(req.query.type) : 'all',
+      page: req.query.page ? Number.parseInt(String(req.query.page), 10) : 1
     });
 
-    renderFragment(res, 'partials/activity-feed.njk', { activity });
+    renderFragment(res, 'partials/activity-feed.njk', {
+      activity: activity.items,
+      activityState: activity,
+      projectId: req.project.publicId
+    });
   })
 );
 

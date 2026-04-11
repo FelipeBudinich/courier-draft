@@ -4,10 +4,10 @@ import { z } from 'zod';
 import { asyncRoute } from '../../../config/errors.js';
 import { requireAuth } from '../../../middleware/auth.js';
 import { validate } from '../../../middleware/validation.js';
+import { listPendingInboxInvites } from '../../../services/inbox/inbox-read-model.js';
 import {
   acceptInvite,
   declineInvite,
-  listPendingInvitesForUser
 } from '../../../services/invites/service.js';
 import { sendApiOk } from './helpers.js';
 
@@ -21,8 +21,8 @@ router.get(
   '/invites',
   requireAuth,
   asyncRoute(async (req, res) => {
-    const invites = await listPendingInvitesForUser({
-      userId: req.currentUser._id
+    const invites = await listPendingInboxInvites({
+      user: req.currentUser
     });
 
     sendApiOk(res, {

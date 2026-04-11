@@ -1,10 +1,15 @@
 import { expect, test } from '@playwright/test';
+import { resetE2EState } from './helpers.js';
 
 const loginAs = async (page, email) => {
   await page.goto('/login');
   await page.selectOption('select[name="email"]', email);
   await page.getByRole('button', { name: /enter the app/i }).click();
 };
+
+test.beforeEach(async ({ request }) => {
+  await resetE2EState(request);
+});
 
 test('owner can export a full standard PDF from the script overview', async ({ page }) => {
   await loginAs(page, 'owner@courier.test');
@@ -37,4 +42,3 @@ test('reviewer can export a full mobile PDF from the editor', async ({ page }) =
   );
   await expect(download.suggestedFilename()).toMatch(/mobile\.pdf$/);
 });
-

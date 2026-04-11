@@ -39,8 +39,11 @@ const activityEventSchema = new Schema(
 
 activityEventSchema.plugin(publicIdPlugin, { prefix: 'act' });
 activityEventSchema.index({ projectId: 1, createdAt: -1 });
+activityEventSchema.index({ projectId: 1, type: 1, createdAt: -1 });
+activityEventSchema.index({ 'payload.memberUserId': 1, type: 1, createdAt: -1 });
+activityEventSchema.index({ 'payload.nextOwnerUserId': 1, type: 1, createdAt: -1 });
+activityEventSchema.index({ 'payload.scriptId': 1, createdAt: -1 });
 
 export const ActivityEvent =
   mongoose.models.ActivityEvent ??
   mongoose.model('ActivityEvent', activityEventSchema);
-

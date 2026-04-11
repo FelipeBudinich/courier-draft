@@ -99,6 +99,9 @@
       </div>
     {% endif %}
   </div>
+  {% if permissions and permissions.canEdit and surface != 'editor' %}
+    <p class="text-sm text-ink/55" data-form-status></p>
+  {% endif %}
 
   {% if outlineNodes.length %}
     <div data-outline-container data-parent-id="">

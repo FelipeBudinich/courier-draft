@@ -5,6 +5,7 @@ import { Project, ProjectMember } from '../../../models/index.js';
 import { requireAuth } from '../../../middleware/auth.js';
 import { loadScript } from '../../../middleware/resources.js';
 import { exportScriptPdf } from '../../../services/export/export-service.js';
+import { createActionKey, runSingleFlight } from '../../../services/ops/idempotency.js';
 
 const router = Router();
 
@@ -43,12 +44,22 @@ router.post(
   loadProjectExportAccess,
   loadScript,
   asyncRoute(async (req, res) => {
-    const result = await exportScriptPdf({
-      project: req.project,
-      script: req.script,
-      actor: req.currentUser,
-      locale: req.locale,
-      input: req.body
+    const result = await runSingleFlight({
+      key: createActionKey(
+        'export-pdf',
+        String(req.currentUser._id),
+        String(req.script._id),
+        req.body
+      ),
+      action: () =>
+        exportScriptPdf({
+          project: req.project,
+          script: req.script,
+          actor: req.currentUser,
+          locale: req.locale,
+          input: req.body,
+          requestId: req.id
+        })
     });
 
     res.setHeader('Cache-Control', 'no-store');
@@ -59,4 +70,3 @@ router.post(
 );
 
 export default router;
-

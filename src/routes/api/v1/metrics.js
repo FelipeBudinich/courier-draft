@@ -11,7 +11,6 @@ import {
   assertProjectScriptFilter,
   listProjectEntityMetrics
 } from '../../../services/entities/service.js';
-import { rebuildProjectEntityRegistry } from '../../../services/entities/entity-registry-rebuild.js';
 import { sendApiOk } from './helpers.js';
 
 const router = Router();
@@ -57,9 +56,6 @@ router.get(
       projectId: req.project._id,
       scriptPublicId: req.query.scriptId ?? null
     });
-    await rebuildProjectEntityRegistry({
-      projectId: req.project._id
-    });
 
     const metrics = await listProjectEntityMetrics({
       project: req.project,
@@ -85,9 +81,6 @@ router.get(
     await assertProjectScriptFilter({
       projectId: req.project._id,
       scriptPublicId: req.query.scriptId ?? null
-    });
-    await rebuildProjectEntityRegistry({
-      projectId: req.project._id
     });
 
     const metrics = await listProjectEntityMetrics({

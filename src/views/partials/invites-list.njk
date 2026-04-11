@@ -6,7 +6,7 @@
   {% if invites.length %}
     <div class="space-y-3">
       {% for invite in invites %}
-        <article class="list-card space-y-3">
+        <article class="list-card space-y-3 {% if invite.read is defined and not invite.read %}border-accent/30 bg-accent/5{% endif %}">
           <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
               <p class="font-semibold text-ink">{{ invite.project.title }}</p>
@@ -17,9 +17,14 @@
                 {% endif %}
               </p>
             </div>
-            <span class="badge">{{ t('shared.status.' + invite.status) }}</span>
+            <div class="flex items-center gap-2">
+              {% if invite.read is defined and not invite.read %}
+                <span class="badge bg-accent/15 text-accent">{{ t('shared.labels.unread') }}</span>
+              {% endif %}
+              <span class="badge">{{ t('shared.status.' + invite.status) }}</span>
+            </div>
           </div>
-          <p class="text-xs text-ink/50">{{ formatDate(invite.invitedAt) }}</p>
+          <p class="text-xs text-ink/50">{{ formatDate(invite.occurredAt or invite.invitedAt) }}</p>
           {% if canRespond is not defined or canRespond %}
             <div class="flex flex-wrap gap-3">
               <form data-invite-action-form action="/api/v1/invites/{{ invite.id }}/accept" method="post">

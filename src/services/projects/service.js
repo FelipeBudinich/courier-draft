@@ -3,14 +3,17 @@ import mongoose from 'mongoose';
 import { badRequest, forbidden, notFound } from '../../config/errors.js';
 import { Project, ProjectMember, User } from '../../models/index.js';
 import { findProjectMemberByPublicId } from '../../models/lookups.js';
+import { generatePublicId } from '../../models/plugins/public-id.js';
 import {
   buildActivityBroadcast,
+  countProjectActivity,
   createActivityEvent,
   listProjectActivity,
-  listProjectsActivity,
+  normalizeActivityFilter,
   serializeActivityEvent
 } from '../activity/service.js';
 import { createAuditLog, listProjectAudit, serializeAuditLog } from '../audit/service.js';
+import { buildDashboardSummary } from '../dashboard/dashboard-summary.js';
 import {
   emitToProjectRoom,
   emitToUserRoom,
@@ -149,20 +152,44 @@ const createProjectRecords = async ({
     { session }
   );
 
-  const [membership] = await ProjectMember.create(
-    [
-      {
+  const membership = {
+    publicId: generatePublicId('pmm'),
+    projectId: project._id,
+    userId: owner._id,
+    role: 'owner',
+    status: 'active',
+    invitedById: owner._id,
+    invitedAt: now,
+    acceptedAt: now,
+    joinedAt: now,
+    removedAt: null
+  };
+
+  await ProjectMember.updateOne(
+    {
+      projectId: project._id,
+      userId: owner._id
+    },
+    {
+      $setOnInsert: {
+        publicId: membership.publicId,
         projectId: project._id,
-        userId: owner._id,
+        userId: owner._id
+      },
+      $set: {
         role: 'owner',
         status: 'active',
         invitedById: owner._id,
         invitedAt: now,
         acceptedAt: now,
-        joinedAt: now
+        joinedAt: now,
+        removedAt: null
       }
-    ],
-    { session }
+    },
+    {
+      upsert: true,
+      session
+    }
   );
 
   const activityEvent = await createActivityEvent({
@@ -367,25 +394,22 @@ export const listUserProjects = async ({ userId }) => {
 };
 
 export const getDashboardReadModel = async ({ user }) => {
-  const projects = await listUserProjects({
-    userId: user._id
-  });
-
-  const rawMemberships = await ProjectMember.find({
-    userId: user._id,
-    status: 'active'
-  }).select('projectId');
-  const projectIds = rawMemberships.map((membership) => membership.projectId);
-  const activity = projectIds.length
-    ? await listProjectsActivity({
-        projectIds,
-        limit: 10
-      })
-    : [];
+  const [projects, dashboardSummary] = await Promise.all([
+    listUserProjects({
+      userId: user._id
+    }),
+    buildDashboardSummary({
+      user
+    })
+  ]);
 
   return {
     projects,
-    activity: activity.map(serializeActivityEvent)
+    invites: dashboardSummary.invites,
+    unreadSummary: dashboardSummary.unreadSummary,
+    pendingInviteCount: dashboardSummary.pendingInviteCount,
+    activeProjectIds: dashboardSummary.activeProjectIds,
+    activity: dashboardSummary.activity
   };
 };
 
@@ -435,13 +459,39 @@ export const getProjectWorkspaceReadModel = async ({ project, membership }) => {
   };
 };
 
-export const getProjectActivityReadModel = async ({ projectId, limit = 20 }) => {
-  const activity = await listProjectActivity({
-    projectId,
-    limit
-  });
+export const getProjectActivityReadModel = async ({
+  projectId,
+  limit = 20,
+  page = 1,
+  filter = 'all'
+}) => {
+  const normalizedFilter = normalizeActivityFilter(filter);
+  const [activity, totalItems] = await Promise.all([
+    listProjectActivity({
+      projectId,
+      limit,
+      page,
+      filter: normalizedFilter
+    }),
+    countProjectActivity({
+      projectId,
+      filter: normalizedFilter
+    })
+  ]);
+  const totalPages = Math.max(1, Math.ceil(totalItems / limit));
 
-  return activity.map(serializeActivityEvent);
+  return {
+    items: activity.map(serializeActivityEvent),
+    filter: normalizedFilter,
+    pagination: {
+      page,
+      pageSize: limit,
+      totalItems,
+      totalPages,
+      hasPreviousPage: page > 1,
+      hasNextPage: page < totalPages
+    }
+  };
 };
 
 export const getProjectAuditReadModel = async ({ projectId, limit = 40 }) => {

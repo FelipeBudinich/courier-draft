@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import { isMongoReady } from '../config/db.js';
+import { getRuntimeReadiness } from '../services/ops/runtime-readiness.js';
 
 const router = Router();
 
@@ -12,17 +13,19 @@ router.get('/healthz', (_req, res) => {
 });
 
 router.get('/readyz', (_req, res) => {
-  const ready = isMongoReady();
+  const runtime = getRuntimeReadiness();
+  const ready = isMongoReady() && runtime.exportRuntime.ready;
   const statusCode = ready ? 200 : 503;
 
   res.status(statusCode).json({
     ok: ready,
     status: ready ? 'ready' : 'degraded',
     checks: {
-      mongo: ready
-    }
+      mongo: isMongoReady(),
+      exportRuntime: runtime.exportRuntime.ready
+    },
+    details: runtime
   });
 });
 
 export default router;
-

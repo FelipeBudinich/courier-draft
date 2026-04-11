@@ -18,6 +18,9 @@
     {% block scripts %}{% endblock %}
   </head>
   <body>
+    <a class="skip-link" href="#{{ mainContentId }}">Skip to main content</a>
+    <div class="sr-only" aria-live="polite" aria-atomic="true" data-live-announcer></div>
+    <div class="hidden" data-auth-expired-banner></div>
     {% include "partials/flash.njk" %}
     {% block body %}{% endblock %}
   </body>

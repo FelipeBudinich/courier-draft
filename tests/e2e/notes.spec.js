@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { resetE2EState } from './helpers.js';
 
 const PROJECT_ID = 'prj_foundation_demo';
 const SCRIPT_ID = 'scr_pilot_demo';
@@ -20,15 +21,20 @@ const openSceneEditor = async (page, email) => {
   await expect(page.locator('[data-notes-panel]')).toBeVisible();
 };
 
+test.beforeEach(async ({ request }) => {
+  await resetE2EState(request);
+});
+
 const openNote = async (page, noteId) => {
   await page.locator(`[data-note-open="${noteId}"]`).click();
   await expect(page.locator('[data-note-editor]')).toBeVisible();
 };
 
 const acceptConfirm = async (page, trigger) => {
-  const dialogPromise = page.waitForEvent('dialog').then((dialog) => dialog.accept());
   await trigger.click();
-  await dialogPromise;
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: /restore version/i }).click();
 };
 
 test('two editors collaborate live on a note and reload into the persisted head text', async ({

@@ -12,7 +12,8 @@
         <a class="btn-secondary" href="/login">{{ t('shared.buttons.login') }}</a>
       </div>
     </header>
-    {% block content %}{% endblock %}
+    <main id="{{ mainContentId }}" tabindex="-1">
+      {% block content %}{% endblock %}
+    </main>
   </div>
 {% endblock %}
-

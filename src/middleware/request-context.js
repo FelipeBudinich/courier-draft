@@ -2,6 +2,7 @@ import { detectLocale, getAvailableLocales, translate } from '../config/i18n.js'
 import { env } from '../config/env.js';
 import { User } from '../models/index.js';
 import { hasCompletedOnboarding } from '../services/auth/service.js';
+import { getUserInboxSummary } from '../services/inbox/inbox-read-model.js';
 
 export const setSurface = (surface) => (req, _res, next) => {
   req.surface = surface;
@@ -45,6 +46,29 @@ export const consumeFlash = (req, res, next) => {
   next();
 };
 
+export const loadInboxSummary = (req, res, next) => {
+  Promise.resolve()
+    .then(async () => {
+      if (
+        (env.isTest && !env.loadInboxSummaryInTest) ||
+        !req.currentUser ||
+        req.path.startsWith('/api/') ||
+        req.path.startsWith('/fragments/') ||
+        req.path === '/healthz' ||
+        req.path === '/readyz'
+      ) {
+        res.locals.inboxSummary = null;
+        return;
+      }
+
+      res.locals.inboxSummary = await getUserInboxSummary({
+        user: req.currentUser
+      });
+    })
+    .then(() => next())
+    .catch(next);
+};
+
 export const setFlash = (req, flash) => {
   if (req.session) {
     req.session.flash = flash;
@@ -82,5 +106,6 @@ export const exposeTemplateGlobals = (req, res, next) => {
     : 'layouts/public.njk';
   res.locals.onboardingRequired =
     req.currentUser ? !hasCompletedOnboarding(req.currentUser) : false;
+  res.locals.mainContentId = 'main-content';
   next();
 };

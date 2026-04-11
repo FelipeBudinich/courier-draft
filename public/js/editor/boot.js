@@ -488,6 +488,7 @@ export const initEditorPage = () => {
   });
 
   socket.on('connect', async () => {
+    const wasResyncing = state.needsResync;
     collabState.setConnectionStatus('connected');
 
     try {
@@ -507,6 +508,9 @@ export const initEditorPage = () => {
           historyMode: 'replace',
           leavePreviousScene: false
         });
+        collabState.showMessage('Connection restored. Latest saved content reloaded.');
+      } else if (wasResyncing) {
+        collabState.showMessage('Connection restored.');
       }
     } catch (error) {
       collabState.setConnectionStatus('unavailable');
@@ -531,6 +535,18 @@ export const initEditorPage = () => {
   socket.on('connect_error', () => {
     collabState.setConnectionStatus('unavailable');
     collabState.showMessage('Realtime connection is unavailable.');
+  });
+
+  window.addEventListener('courier:auth-expired', () => {
+    collabState.setConnectionStatus('unavailable');
+    collabState.setReadOnly(true, state.bootstrap.scene?.headUpdatedAt ?? null);
+    collabState.showMessage('Your session expired. Sign in again to keep editing safely.');
+    state.runtime?.editor?.setReadOnly(true);
+    setEditorControls({
+      elements,
+      canEdit: false,
+      connected: false
+    });
   });
 
   socket.on('scene:version-restored', ({ sceneId }) => {

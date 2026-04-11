@@ -1,10 +1,15 @@
 import { test, expect } from '@playwright/test';
+import { resetE2EState } from './helpers.js';
 
 const loginAs = async (page, email) => {
   await page.goto('/login');
   await page.selectOption('select[name="email"]', email);
   await page.getByRole('button', { name: /enter the app/i }).click();
 };
+
+test.beforeEach(async ({ request }) => {
+  await resetE2EState(request);
+});
 
 test('owner can create a project from the dashboard', async ({ page }) => {
   await loginAs(page, 'owner@courier.test');

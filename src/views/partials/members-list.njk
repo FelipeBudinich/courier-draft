@@ -29,14 +29,17 @@
                   <option value="reviewer" {% if member.role == 'reviewer' %}selected{% endif %}>{{ t('shared.badges.reviewer') }}</option>
                 </select>
                 <button class="btn-secondary" type="submit">{{ t('shared.buttons.save') }}</button>
+                <span class="text-sm text-ink/55" data-form-status></span>
               </form>
               <form data-member-remove-form data-project-id="{{ projectId }}" data-member-id="{{ member.id }}">
                 <button class="btn-secondary" type="submit">{{ t('shared.buttons.removeMember') }}</button>
+                <span class="ml-3 text-sm text-ink/55" data-form-status></span>
               </form>
             </div>
           {% elif canManageMembers and member.role != 'owner' and member.status == 'pending' %}
             <form data-member-remove-form data-project-id="{{ projectId }}" data-member-id="{{ member.id }}">
               <button class="btn-secondary" type="submit">{{ t('shared.buttons.cancelInvite') }}</button>
+              <span class="ml-3 text-sm text-ink/55" data-form-status></span>
             </form>
           {% endif %}
         </article>

@@ -13,6 +13,17 @@ export const csrfFetch = (input, init = {}) => {
     credentials: 'same-origin',
     ...init,
     headers
+  }).then((response) => {
+    if (response.status === 401 || response.status === 403) {
+      window.dispatchEvent(
+        new CustomEvent('courier:auth-expired', {
+          detail: {
+            status: response.status
+          }
+        })
+      );
+    }
+
+    return response;
   });
 };
-

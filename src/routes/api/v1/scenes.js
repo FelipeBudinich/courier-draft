@@ -11,6 +11,7 @@ import { loadScene, loadScript } from '../../../middleware/resources.js';
 import { validate } from '../../../middleware/validation.js';
 import { getOutlineReadModel } from '../../../services/outline/service.js';
 import { sceneSessionManager } from '../../../services/collab/scene-session-manager.js';
+import { createActionKey, runSingleFlight } from '../../../services/ops/idempotency.js';
 import { parseSceneHeadSaveRequest } from '../../../services/scenes/document-schema.js';
 import { buildSceneBootstrapPayload } from '../../../services/scenes/scene-bootstrap.js';
 import {
@@ -208,11 +209,19 @@ router.post(
   loadScene,
   requireProjectRole('editor'),
   asyncRoute(async (req, res) => {
-    const result = await majorSaveScene({
-      project: req.project,
-      script: req.script,
-      scene: req.scene,
-      actor: req.currentUser
+    const result = await runSingleFlight({
+      key: createActionKey(
+        'scene-major-save',
+        String(req.currentUser._id),
+        String(req.scene._id)
+      ),
+      action: () =>
+        majorSaveScene({
+          project: req.project,
+          script: req.script,
+          scene: req.scene,
+          actor: req.currentUser
+        })
     });
 
     sendApiOk(
@@ -242,12 +251,21 @@ router.post(
   loadScene,
   requireProjectRole('editor'),
   asyncRoute(async (req, res) => {
-    const result = await restoreSceneVersion({
-      project: req.project,
-      script: req.script,
-      scene: req.scene,
-      actor: req.currentUser,
-      versionId: req.params.versionId
+    const result = await runSingleFlight({
+      key: createActionKey(
+        'scene-restore',
+        String(req.currentUser._id),
+        String(req.scene._id),
+        req.params.versionId
+      ),
+      action: () =>
+        restoreSceneVersion({
+          project: req.project,
+          script: req.script,
+          scene: req.scene,
+          actor: req.currentUser,
+          versionId: req.params.versionId
+        })
     });
 
     sendApiOk(res, result);

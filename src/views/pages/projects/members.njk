@@ -40,5 +40,6 @@
       </form>
     </section>
   {% endif %}
-  {% include "partials/members-list.njk" with { projectId: project.id, canManageMembers: canManageMembers } %}
+  {% set projectId = project.id %}
+  {% include "partials/members-list.njk" %}
 {% endblock %}

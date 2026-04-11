@@ -1,0 +1,61 @@
+<section
+  class="panel space-y-4"
+  data-inbox-summary
+  data-unread-count="{{ inboxSummary.unread.total }}"
+  data-unread-invites="{{ inboxSummary.unread.invites }}"
+  data-unread-membership="{{ inboxSummary.unread.membership }}"
+  data-unread-activity="{{ inboxSummary.unread.activity }}"
+  data-pending-invite-count="{{ inboxSummary.pendingInviteCount }}"
+>
+  <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <div>
+      <h2 class="text-2xl text-ink">{{ t('pages.inbox.heading') }}</h2>
+      <p class="mt-1 text-sm text-ink/60">
+        {{ inboxSummary.unread.total }} {{ t('shared.labels.unread') | lower }}
+      </p>
+    </div>
+    <button
+      class="btn-secondary"
+      type="button"
+      data-inbox-read-all
+      {% if not inboxSummary.unread.total %}disabled{% endif %}
+    >
+      {{ t('shared.buttons.markAllRead') }}
+    </button>
+  </div>
+  <div class="grid gap-3 md:grid-cols-3">
+    <article class="list-card">
+      <p class="text-sm font-semibold text-ink">{{ t('fragments.invites.heading') }}</p>
+      <p class="mt-2 text-2xl text-ink">{{ inboxSummary.pendingInviteCount }}</p>
+      <p class="mt-1 text-xs text-ink/50">{{ inboxSummary.unread.invites }} {{ t('shared.labels.unread') | lower }}</p>
+    </article>
+    <article class="list-card">
+      <p class="text-sm font-semibold text-ink">{{ t('filters.membershipChanges') }}</p>
+      <p class="mt-2 text-2xl text-ink">{{ inboxSummary.unread.membership }}</p>
+      <p class="mt-1 text-xs text-ink/50">{{ t('shared.labels.unread') }}</p>
+    </article>
+    <article class="list-card">
+      <p class="text-sm font-semibold text-ink">{{ t('fragments.activity.heading') }}</p>
+      <p class="mt-2 text-2xl text-ink">{{ inboxSummary.unread.activity }}</p>
+      <p class="mt-1 text-xs text-ink/50">{{ t('shared.labels.unread') }}</p>
+    </article>
+  </div>
+  <nav class="flex flex-wrap gap-2" aria-label="{{ t('pages.inbox.heading') }}">
+    <a class="filter-chip {% if currentFilter == 'all' %}is-active{% endif %}" href="/inbox">
+      <span>{{ t('filters.all') }}</span>
+      <span class="badge">{{ inboxFilters.all }}</span>
+    </a>
+    <a class="filter-chip {% if currentFilter == 'invites' %}is-active{% endif %}" href="/inbox?filter=invites">
+      <span>{{ t('filters.invites') }}</span>
+      <span class="badge">{{ inboxFilters.invites }}</span>
+    </a>
+    <a class="filter-chip {% if currentFilter == 'membership' %}is-active{% endif %}" href="/inbox?filter=membership">
+      <span>{{ t('filters.membershipChanges') }}</span>
+      <span class="badge">{{ inboxFilters.membership }}</span>
+    </a>
+    <a class="filter-chip {% if currentFilter == 'activity' %}is-active{% endif %}" href="/inbox?filter=activity">
+      <span>{{ t('filters.activity') }}</span>
+      <span class="badge">{{ inboxFilters.activity }}</span>
+    </a>
+  </nav>
+</section>

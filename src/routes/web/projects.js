@@ -11,7 +11,6 @@ import {
   assertProjectScriptFilter,
   buildProjectEntityPageModel
 } from '../../services/entities/service.js';
-import { rebuildProjectEntityRegistry } from '../../services/entities/entity-registry-rebuild.js';
 import {
   getProjectActivityReadModel,
   getProjectAuditReadModel,
@@ -80,7 +79,10 @@ router.get(
   loadProjectMembership,
   asyncRoute(async (req, res) => {
     const activity = await getProjectActivityReadModel({
-      projectId: req.project._id
+      projectId: req.project._id,
+      limit: 25,
+      filter: req.query.type ? String(req.query.type) : 'all',
+      page: req.query.page ? Number.parseInt(String(req.query.page), 10) : 1
     });
 
     res.render('pages/projects/activity.njk', {
@@ -88,7 +90,8 @@ router.get(
         id: req.project.publicId,
         title: req.project.name
       },
-      activity
+      activity: activity.items,
+      activityState: activity
     });
   })
 );
@@ -122,9 +125,6 @@ router.get(
       projectId: req.project._id,
       scriptPublicId: req.query.scriptId ? String(req.query.scriptId) : null
     });
-    await rebuildProjectEntityRegistry({
-      projectId: req.project._id
-    });
 
     const page = await buildProjectEntityPageModel({
       project: req.project,
@@ -151,9 +151,6 @@ router.get(
     await assertProjectScriptFilter({
       projectId: req.project._id,
       scriptPublicId: req.query.scriptId ? String(req.query.scriptId) : null
-    });
-    await rebuildProjectEntityRegistry({
-      projectId: req.project._id
     });
 
     const page = await buildProjectEntityPageModel({

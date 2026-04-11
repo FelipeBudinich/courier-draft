@@ -22,11 +22,19 @@
     "entities": "エンティティ",
     "audit": "監査"
   },
+  "filters": {
+    "all": "すべて",
+    "invites": "招待",
+    "membership": "メンバー変更",
+    "membershipChanges": "メンバー変更",
+    "activity": "アクティビティ"
+  },
   "shared": {
     "buttons": {
       "login": "サインイン",
       "openProject": "プロジェクトを開く",
       "openScript": "脚本を開く",
+      "open": "開く",
       "openEditor": "エディターシェルを開く",
       "exportPdf": "PDF を書き出す",
       "save": "保存",
@@ -39,7 +47,11 @@
       "cancelInvite": "招待を取り消す",
       "transferOwnership": "所有権を移譲",
       "readDocs": "アーキテクチャ資料を読む",
-      "switchLocale": "言語を切り替える"
+      "switchLocale": "言語を切り替える",
+      "markRead": "既読にする",
+      "markAllRead": "すべて既読にする",
+      "previous": "前へ",
+      "next": "次へ"
     },
     "labels": {
       "email": "メール",
@@ -56,7 +68,9 @@
       "updatedAt": "更新日",
       "createdAt": "作成日",
       "requestId": "リクエスト ID",
-      "returnTo": "戻り先"
+      "returnTo": "戻り先",
+      "unread": "未読",
+      "pagination": "ページ送り"
     },
     "badges": {
       "owner": "オーナー",
@@ -114,8 +128,10 @@
     },
     "inbox": {
       "title": "受信箱",
-      "heading": "招待受信箱",
-      "description": "保留中のプロジェクト招待を確認し、どこで共同作業するかを決めましょう。"
+      "heading": "通知センター",
+      "description": "招待、権限変更、最近の横断プロジェクト活動をひとつの場所で追跡できます。",
+      "emptyHeading": "受信箱は空です",
+      "emptyBody": "新しい招待や重要な共同作業の更新はここに表示されます。"
     },
     "settingsProfile": {
       "title": "プロフィール",

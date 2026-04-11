@@ -1,12 +1,14 @@
 import mongoose from 'mongoose';
 
 import { badRequest, conflict, forbidden, notFound } from '../../config/errors.js';
+import { logger } from '../../config/logger.js';
 import { ProjectMember, User } from '../../models/index.js';
+import { generatePublicId } from '../../models/plugins/public-id.js';
 import { buildActivityBroadcast, createActivityEvent } from '../activity/service.js';
 import { createAuditLog } from '../audit/service.js';
 import { normalizeUsername } from '../auth/username.js';
+import { clearInboxItemRead } from '../inbox/unread-state.js';
 import { emitToProjectRoom, emitToUserRoom } from '../realtime/broadcaster.js';
-import { serializeMember } from '../projects/service.js';
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -17,6 +19,7 @@ export const serializeInvite = (membership) => ({
   invitedAt: membership.invitedAt,
   acceptedAt: membership.acceptedAt,
   removedAt: membership.removedAt,
+  occurredAt: membership.invitedAt ?? membership.updatedAt ?? membership.createdAt,
   project: membership.projectId
     ? {
         id: membership.projectId.publicId,
@@ -28,6 +31,27 @@ export const serializeInvite = (membership) => ({
         userId: membership.invitedById.publicId,
         username: membership.invitedById.username ?? null,
         displayName: membership.invitedById.displayName
+      }
+    : null
+});
+
+const serializeInviteMember = ({ membership, targetUser, actor }) => ({
+  id: membership.publicId,
+  role: membership.role,
+  status: membership.status,
+  invitedAt: membership.invitedAt,
+  acceptedAt: membership.acceptedAt ?? null,
+  joinedAt: membership.joinedAt ?? null,
+  removedAt: membership.removedAt ?? null,
+  invitedByUserId: actor.publicId,
+  user: targetUser
+    ? {
+        id: targetUser.publicId,
+        email: targetUser.email,
+        username: targetUser.username ?? null,
+        displayName: targetUser.displayName,
+        avatarUrl: targetUser.avatarUrl ?? '',
+        locale: targetUser.preferences?.locale || targetUser.locale
       }
     : null
 });
@@ -157,7 +181,8 @@ export const createProjectInvite = async ({
     throw conflict('That user is already an active member of this project.');
   }
 
-  let membership = existingMembership;
+  const membershipPublicId = existingMembership?.publicId ?? generatePublicId('pmm');
+  let membership = null;
   let activityEvent = null;
 
   const session = await mongoose.startSession();
@@ -165,29 +190,60 @@ export const createProjectInvite = async ({
     await session.withTransaction(async () => {
       const now = new Date();
 
-      if (!membership) {
-        [membership] = await ProjectMember.create(
-          [
-            {
+      if (!existingMembership) {
+        membership = await ProjectMember.findOneAndUpdate(
+          {
+            projectId: project._id,
+            userId: targetUser._id
+          },
+          {
+            $setOnInsert: {
+              publicId: membershipPublicId,
               projectId: project._id,
-              userId: targetUser._id,
+              userId: targetUser._id
+            },
+            $set: {
               role,
               status: 'pending',
               invitedById: actor._id,
-              invitedAt: now
+              invitedAt: now,
+              acceptedAt: null,
+              joinedAt: null,
+              removedAt: null
             }
-          ],
-          { session }
+          },
+          {
+            upsert: true,
+            new: true,
+            setDefaultsOnInsert: true,
+            session
+          }
         );
       } else {
-        membership.role = role;
-        membership.status = 'pending';
-        membership.invitedById = actor._id;
-        membership.invitedAt = now;
-        membership.acceptedAt = null;
-        membership.joinedAt = null;
-        membership.removedAt = null;
-        await membership.save({ session });
+        membership = await ProjectMember.findOneAndUpdate(
+          {
+            _id: existingMembership._id
+          },
+          {
+            $set: {
+              role,
+              status: 'pending',
+              invitedById: actor._id,
+              invitedAt: now,
+              acceptedAt: null,
+              joinedAt: null,
+              removedAt: null
+            }
+          },
+          {
+            new: true,
+            session
+          }
+        );
+      }
+
+      if (!membership) {
+        throw conflict('That user already has a membership record for this project.');
       }
 
       activityEvent = await createActivityEvent({
@@ -249,11 +305,27 @@ export const createProjectInvite = async ({
     })
   );
 
-  const populatedMembership = await ProjectMember.findById(membership._id)
-    .populate('userId', 'publicId email username displayName avatarUrl locale preferences')
-    .populate('invitedById', 'publicId username displayName');
+  try {
+    await clearInboxItemRead({
+      userId: targetUser._id,
+      itemId: membership.publicId
+    });
+  } catch (error) {
+    logger.warn(
+      {
+        err: error,
+        targetUserId: targetUser.publicId,
+        inviteId: membership.publicId
+      },
+      'Failed to clear inbox read state for invite'
+    );
+  }
 
-  return serializeMember(populatedMembership);
+  return serializeInviteMember({
+    membership,
+    targetUser,
+    actor
+  });
 };
 
 const resolveInviteForUser = async ({ invitePublicId, user }) => {

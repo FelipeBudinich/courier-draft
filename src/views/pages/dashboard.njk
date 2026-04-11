@@ -3,9 +3,10 @@
 {% block title %}{{ t('pages.dashboard.title') }} · {{ t('meta.appName') }}{% endblock %}
 
 {% block content %}
-  <section class="hero-panel">
-    <h2 class="text-4xl text-ink">{{ t('pages.dashboard.heading') }}</h2>
+  <section class="hero-panel" data-dashboard-root>
+    <h1 class="text-4xl text-ink">{{ t('pages.dashboard.heading') }}</h1>
     <p class="mt-3 max-w-3xl text-lg leading-8 text-ink/70">{{ t('pages.dashboard.description') }}</p>
+    <script type="application/json" data-dashboard-boot>{{ dashboardBootJson | safe }}</script>
   </section>
   <section class="grid gap-6 xl:grid-cols-[1.2fr,0.8fr]">
     <article class="panel space-y-4">
@@ -39,7 +40,32 @@
       {% endif %}
     </article>
     <div class="space-y-6">
-      {% include "partials/invites-list.njk" %}
+      <section class="panel space-y-4" data-dashboard-inbox-summary>
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <h2 class="text-xl text-ink">{{ t('pages.inbox.heading') }}</h2>
+            <p class="mt-1 text-sm text-ink/60">{{ t('pages.inbox.description') }}</p>
+          </div>
+          <a class="btn-secondary" href="/inbox">{{ t('nav.inbox') }}</a>
+        </div>
+        <div class="grid gap-3 md:grid-cols-3">
+          <article class="list-card">
+            <p class="text-sm font-semibold text-ink">{{ t('shared.labels.unread') }}</p>
+            <p class="mt-2 text-2xl text-ink" data-dashboard-unread-total>{{ unreadSummary.total or 0 }}</p>
+          </article>
+          <article class="list-card">
+            <p class="text-sm font-semibold text-ink">{{ t('fragments.invites.heading') }}</p>
+            <p class="mt-2 text-2xl text-ink" data-dashboard-unread-invites>{{ unreadSummary.invites or 0 }}</p>
+          </article>
+          <article class="list-card">
+            <p class="text-sm font-semibold text-ink">{{ t('fragments.activity.heading') }}</p>
+            <p class="mt-2 text-2xl text-ink" data-dashboard-unread-activity>{{ (unreadSummary.membership or 0) + (unreadSummary.activity or 0) }}</p>
+          </article>
+        </div>
+      </section>
+      <div data-dashboard-invites-region>
+        {% include "partials/invites-list.njk" %}
+      </div>
       {% include "partials/activity-feed.njk" %}
     </div>
   </section>

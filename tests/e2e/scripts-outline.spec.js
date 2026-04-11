@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { resetE2EState } from './helpers.js';
 
 const loginAs = async (page, email) => {
   await page.goto('/login');
@@ -7,10 +8,16 @@ const loginAs = async (page, email) => {
 };
 
 const acceptPrompt = async (page, trigger, promptText) => {
-  const dialogPromise = page.waitForEvent('dialog').then((dialog) => dialog.accept(promptText));
   await trigger.click();
-  await dialogPromise;
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel('Node title').fill(promptText);
+  await dialog.getByRole('button', { name: /create/i }).click();
 };
+
+test.beforeEach(async ({ request }) => {
+  await resetE2EState(request);
+});
 
 test('owner can create and manage a script outline from the browser', async ({ page }) => {
   await loginAs(page, 'owner@courier.test');

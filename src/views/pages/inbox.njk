@@ -4,8 +4,19 @@
 
 {% block content %}
   <section class="hero-panel">
-    <h2 class="text-4xl text-ink">{{ t('pages.inbox.heading') }}</h2>
+    <h1 class="text-4xl text-ink">{{ t('pages.inbox.heading') }}</h1>
     <p class="mt-3 max-w-3xl text-lg leading-8 text-ink/70">{{ t('pages.inbox.description') }}</p>
+    <script type="application/json" data-inbox-boot>{{ inboxBootJson | safe }}</script>
   </section>
-  {% include "partials/invites-list.njk" %}
+  <div class="space-y-6" data-inbox-center>
+    <div data-inbox-summary-region>
+      {% set inboxSummary = inbox.summary %}
+      {% set inboxFilters = inbox.filters %}
+      {% set currentFilter = inbox.filter %}
+      {% include "partials/inbox-summary.njk" %}
+    </div>
+    <div data-inbox-items-region>
+      {% include "partials/inbox-items.njk" %}
+    </div>
+  </div>
 {% endblock %}

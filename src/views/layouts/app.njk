@@ -5,7 +5,7 @@
     <aside class="panel space-y-6">
       <div>
         <p class="text-xs font-semibold uppercase tracking-[0.22em] text-ink/45">{{ t('meta.appName') }}</p>
-        <h1 class="mt-2 text-3xl text-ink">{{ currentUser.displayName }}</h1>
+        <p class="mt-2 text-3xl text-ink">{{ currentUser.displayName }}</p>
         <p class="text-sm text-ink/60">
           {% if currentUser.username %}
             @{{ currentUser.username }}
@@ -22,8 +22,21 @@
       {% endif %}
       <nav class="space-y-2">
         {% if not onboardingRequired %}
-          <a class="block rounded-2xl px-4 py-3 hover:bg-mist/70 {% if pathname == '/app' %}bg-mist{% endif %}" href="/app">{{ t('nav.dashboard') }}</a>
-          <a class="block rounded-2xl px-4 py-3 hover:bg-mist/70 {% if pathname == '/inbox' %}bg-mist{% endif %}" href="/inbox">{{ t('nav.inbox') }}</a>
+          <a class="block rounded-2xl px-4 py-3 hover:bg-mist/70 focus-visible:bg-mist {% if pathname == '/app' %}bg-mist{% endif %}" href="/app">{{ t('nav.dashboard') }}</a>
+          <a class="flex items-center justify-between rounded-2xl px-4 py-3 hover:bg-mist/70 focus-visible:bg-mist {% if pathname == '/inbox' %}bg-mist{% endif %}" href="/inbox">
+            <span>{{ t('nav.inbox') }}</span>
+            {% if inboxSummary and inboxSummary.unread.total %}
+              <span
+                class="badge"
+                aria-label="{{ inboxSummary.unread.total }} unread inbox items"
+                data-inbox-nav-badge
+              >
+                {{ inboxSummary.unread.total }}
+              </span>
+            {% else %}
+              <span class="badge" data-inbox-nav-badge hidden>0</span>
+            {% endif %}
+          </a>
           <a class="block rounded-2xl px-4 py-3 hover:bg-mist/70 {% if pathname == '/settings/preferences' %}bg-mist{% endif %}" href="/settings/preferences">{{ t('nav.preferences') }}</a>
         {% endif %}
         <a class="block rounded-2xl px-4 py-3 hover:bg-mist/70 {% if pathname == '/settings/profile' %}bg-mist{% endif %}" href="/settings/profile">{{ t('nav.profile') }}</a>
@@ -36,7 +49,7 @@
         </form>
       </div>
     </aside>
-    <main class="space-y-6">
+    <main id="{{ mainContentId }}" class="space-y-6" tabindex="-1">
       {% block content %}{% endblock %}
     </main>
   </div>

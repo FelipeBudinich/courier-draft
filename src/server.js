@@ -7,9 +7,13 @@ import { env } from './config/env.js';
 import { logger } from './config/logger.js';
 import { createMongoSessionStore } from './config/session.js';
 import { createRealtimeServer } from './sockets/index.js';
+import { logRuntimeReadiness } from './services/ops/runtime-readiness.js';
 
 export const startServer = async ({ port = env.port } = {}) => {
   await connectToMongo();
+  logRuntimeReadiness({
+    logger
+  });
 
   const sessionStore = createMongoSessionStore({
     client: getMongoClient()
@@ -32,10 +36,37 @@ export const startServer = async ({ port = env.port } = {}) => {
     });
   });
 
+  const shutdown = async (signal) => {
+    logger.info({ signal }, 'Shutting down Courier Draft');
+    await new Promise((resolve) => io.close(() => resolve()));
+    await new Promise((resolve, reject) => {
+      httpServer.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve();
+      });
+    });
+  };
+
+  for (const signal of ['SIGINT', 'SIGTERM']) {
+    process.once(signal, () => {
+      shutdown(signal)
+        .then(() => process.exit(0))
+        .catch((error) => {
+          logger.error({ err: error, signal }, 'Shutdown failed');
+          process.exit(1);
+        });
+    });
+  }
+
   return {
     app,
     io,
-    httpServer
+    httpServer,
+    shutdown
   };
 };
 
@@ -45,6 +76,15 @@ const isEntrypoint =
 if (isEntrypoint) {
   startServer().catch((error) => {
     logger.error({ err: error }, 'Failed to start server');
+    process.exit(1);
+  });
+
+  process.on('unhandledRejection', (error) => {
+    logger.error({ err: error }, 'Unhandled promise rejection');
+  });
+
+  process.on('uncaughtException', (error) => {
+    logger.fatal({ err: error }, 'Uncaught exception');
     process.exit(1);
   });
 }

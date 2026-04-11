@@ -10,6 +10,7 @@ import {
 import { loadNote } from '../../../middleware/resources.js';
 import { validate } from '../../../middleware/validation.js';
 import { noteSessionManager } from '../../../services/collab/note-session-manager.js';
+import { createActionKey, runSingleFlight } from '../../../services/ops/idempotency.js';
 import { emitToNoteRoom } from '../../../services/realtime/broadcaster.js';
 import {
   listNoteVersions,
@@ -275,10 +276,18 @@ router.post(
   loadNote,
   requireNoteMutationAccess,
   asyncRoute(async (req, res) => {
-    const result = await majorSaveNote({
-      project: req.project,
-      note: req.note,
-      actor: req.currentUser
+    const result = await runSingleFlight({
+      key: createActionKey(
+        'note-major-save',
+        String(req.currentUser._id),
+        String(req.note._id)
+      ),
+      action: () =>
+        majorSaveNote({
+          project: req.project,
+          note: req.note,
+          actor: req.currentUser
+        })
     });
 
     sendApiOk(
@@ -309,11 +318,20 @@ router.post(
   loadNote,
   requireNoteMutationAccess,
   asyncRoute(async (req, res) => {
-    const result = await restoreNoteVersion({
-      project: req.project,
-      note: req.note,
-      actor: req.currentUser,
-      versionId: req.params.versionId
+    const result = await runSingleFlight({
+      key: createActionKey(
+        'note-restore',
+        String(req.currentUser._id),
+        String(req.note._id),
+        req.params.versionId
+      ),
+      action: () =>
+        restoreNoteVersion({
+          project: req.project,
+          note: req.note,
+          actor: req.currentUser,
+          versionId: req.params.versionId
+        })
     });
 
     sendApiOk(res, result);
