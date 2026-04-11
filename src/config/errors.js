@@ -26,6 +26,11 @@ export const staleState = (
   details
 ) => new AppError({ statusCode: 409, code: 'STALE_STATE', message, details });
 
+export const noChangesToSave = (
+  message = 'No changes are available to save as a major version.',
+  details
+) => new AppError({ statusCode: 409, code: 'NO_CHANGES_TO_SAVE', message, details });
+
 export const unauthorized = (message = 'You must sign in to continue.') =>
   new AppError({ statusCode: 401, code: 'AUTH_REQUIRED', message });
 

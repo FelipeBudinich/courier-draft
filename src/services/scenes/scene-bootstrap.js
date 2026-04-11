@@ -52,6 +52,7 @@ const serializeScriptFrame = (script) => {
       authors: script.authors ?? [],
       majorSaveSequence: script.majorSaveSequence ?? 0,
       currentVersionLabel: script.currentVersionLabel ?? null,
+      lastCheckpointAt: script.lastCheckpointAt ?? null,
       sceneNumberMode: script.sceneNumberMode,
       createdByUserId: script.createdByUserId ?? null,
       updatedByUserId: script.updatedByUserId ?? null,
@@ -126,6 +127,7 @@ export const buildSceneBootstrapPayload = ({
       cachedSlugline: scene.structuredBody?.cachedSlugline ?? derived.cachedSlugline,
       headRevision: getSceneHeadRevision(scene),
       headUpdatedAt: scene.headUpdatedAt,
+      currentMajorVersionId: scene.currentMajorVersionId ?? scene.latestMajorVersionId ?? null,
       updatedBy: serializeUser(scene.updatedByUserId)
     },
     capabilities: {

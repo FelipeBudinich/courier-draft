@@ -478,6 +478,7 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
         const data = {
           sceneId,
           canEdit,
+          currentMajorVersionId: session.currentMajorVersionId,
           latestMajorVersionId: session.latestMajorVersionId,
           headUpdatedAt:
             session.lastPersistedAt?.toISOString?.() ?? new Date().toISOString()
@@ -537,6 +538,7 @@ export const createRealtimeServer = ({ httpServer, sessionMiddleware }) => {
         const data = {
           noteId,
           canEdit,
+          currentMajorVersionId: session.currentMajorVersionId,
           latestMajorVersionId: session.latestMajorVersionId,
           headUpdatedAt:
             session.lastPersistedAt?.toISOString?.() ?? new Date().toISOString(),

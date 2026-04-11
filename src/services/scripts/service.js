@@ -1,7 +1,14 @@
 import mongoose from 'mongoose';
 
 import { badRequest } from '../../config/errors.js';
-import { DocumentVersion, Note, OutlineNode, Scene, Script } from '../../models/index.js';
+import {
+  DocumentVersion,
+  Note,
+  OutlineNode,
+  Scene,
+  Script,
+  ScriptVersion
+} from '../../models/index.js';
 import { createActivityEvent } from '../activity/service.js';
 import { createAuditLog } from '../audit/service.js';
 import { synchronizeSceneNumbering, getOutlineReadModel, getScriptActivitySummary } from '../outline/service.js';
@@ -134,7 +141,7 @@ export const getScriptDetailReadModel = async ({
   const hydratedScript = await hydrateScript({
     scriptId: script._id
   });
-  const [outline, activity] = await Promise.all([
+  const [outline, activity, latestCheckpoint] = await Promise.all([
     getOutlineReadModel({
       script: hydratedScript
     }),
@@ -142,14 +149,25 @@ export const getScriptDetailReadModel = async ({
       projectId: project._id,
       scriptPublicId: hydratedScript.publicId,
       limit: 10
+    }),
+    ScriptVersion.findOne({
+      scriptId: hydratedScript._id
     })
+      .select('createdAt')
+      .sort({ createdAt: -1, majorSaveSequence: -1 })
   ]);
   const countsByScriptId = await loadScriptCounts({
     projectId: project._id
   });
 
   return {
-    script: serializeScript(hydratedScript, countsByScriptId.get(String(hydratedScript._id))),
+    script: serializeScript(
+      hydratedScript,
+      countsByScriptId.get(String(hydratedScript._id)),
+      {
+        lastCheckpointAt: latestCheckpoint?.createdAt ?? null
+      }
+    ),
     outline: outline.nodes,
     activity,
     permissions: {
@@ -407,6 +425,9 @@ export const deleteScript = async ({
             }).session(session)
           : Promise.resolve(),
         Note.deleteMany({
+          scriptId: script._id
+        }).session(session),
+        ScriptVersion.deleteMany({
           scriptId: script._id
         }).session(session),
         Scene.deleteMany({

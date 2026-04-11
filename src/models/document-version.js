@@ -22,30 +22,55 @@ const documentVersionSchema = new Schema(
       required: true,
       index: true
     },
+    scriptId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Script',
+      default: null
+    },
+    scriptVersionId: {
+      type: Schema.Types.ObjectId,
+      ref: 'ScriptVersion',
+      default: null
+    },
+    snapshotType: {
+      type: String,
+      enum: ['major', 'restore'],
+      default: 'major'
+    },
+    versionSequence: {
+      type: Number,
+      required: true
+    },
     versionLabel: {
       type: String,
       trim: true
     },
-    content: {
-      type: String,
-      default: ''
+    contentSnapshot: {
+      type: Schema.Types.Mixed,
+      required: true
     },
     savedAt: {
       type: Date,
       default: Date.now
     },
-    createdById: {
+    savedByUserId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true
     },
-    isMajor: {
-      type: Boolean,
-      default: true
+    restoredFromVersionId: {
+      type: Schema.Types.ObjectId,
+      ref: 'DocumentVersion',
+      default: null
     },
-    metadata: {
-      type: Schema.Types.Mixed,
-      default: {}
+    headRevisionAtSave: {
+      type: Number,
+      default: 0
+    },
+    contentHash: {
+      type: String,
+      required: true,
+      trim: true
     }
   },
   {
@@ -55,10 +80,14 @@ const documentVersionSchema = new Schema(
 );
 
 documentVersionSchema.plugin(publicIdPlugin, { prefix: 'ver' });
+documentVersionSchema.index(
+  { docType: 1, docId: 1, versionSequence: 1 },
+  { unique: true }
+);
 documentVersionSchema.index({ docType: 1, docId: 1, savedAt: -1 });
 documentVersionSchema.index({ projectId: 1, savedAt: -1 });
+documentVersionSchema.index({ scriptVersionId: 1 });
 
 export const DocumentVersion =
   mongoose.models.DocumentVersion ??
   mongoose.model('DocumentVersion', documentVersionSchema);
-

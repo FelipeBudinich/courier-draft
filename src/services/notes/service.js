@@ -213,6 +213,9 @@ const serializeNoteSummary = ({
     isDetached: note.isDetached,
     detachedAt: note.detachedAt ?? null,
     anchorSummary: serializeAnchorSummary(note),
+    currentMajorVersionId: note.currentMajorVersionId
+      ? String(note.currentMajorVersionId)
+      : null,
     latestMajorVersionId: note.currentMajorVersionId
       ? String(note.currentMajorVersionId)
       : null,

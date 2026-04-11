@@ -17,6 +17,11 @@ import {
   updateOutlineNode
 } from '../../../services/outline/service.js';
 import {
+  getScriptVersionCheckpointDetail,
+  listScriptVersionCheckpoints,
+  majorSaveScript
+} from '../../../services/versioning/checkpoint-service.js';
+import {
   createScript,
   deleteScript,
   getScriptDetailReadModel,
@@ -35,6 +40,12 @@ const projectParamsSchema = z.object({
 const scriptParamsSchema = z.object({
   projectId: z.string().startsWith('prj_'),
   scriptId: z.string().startsWith('scr_')
+});
+
+const scriptVersionParamsSchema = z.object({
+  projectId: z.string().startsWith('prj_'),
+  scriptId: z.string().startsWith('scr_'),
+  scriptVersionId: z.string().startsWith('svr_')
 });
 
 const outlineNodeParamsSchema = z.object({
@@ -144,6 +155,76 @@ router.get(
     });
 
     sendApiOk(res, detail);
+  })
+);
+
+router.get(
+  '/projects/:projectId/scripts/:scriptId/versions',
+  requireAuth,
+  validate({ params: scriptParamsSchema }),
+  loadProjectMembership,
+  loadScript,
+  asyncRoute(async (req, res) => {
+    const versions = await listScriptVersionCheckpoints({
+      script: req.script
+    });
+
+    sendApiOk(res, {
+      versions
+    });
+  })
+);
+
+router.get(
+  '/projects/:projectId/scripts/:scriptId/versions/:scriptVersionId',
+  requireAuth,
+  validate({ params: scriptVersionParamsSchema }),
+  loadProjectMembership,
+  loadScript,
+  asyncRoute(async (req, res) => {
+    const version = await getScriptVersionCheckpointDetail({
+      project: req.project,
+      script: req.script,
+      scriptVersionId: req.params.scriptVersionId
+    });
+
+    sendApiOk(res, {
+      version
+    });
+  })
+);
+
+router.post(
+  '/projects/:projectId/scripts/:scriptId/versions/major-save',
+  requireAuth,
+  validate({ params: scriptParamsSchema }),
+  loadProjectMembership,
+  loadScript,
+  requireProjectRole('editor'),
+  asyncRoute(async (req, res) => {
+    const result = await majorSaveScript({
+      project: req.project,
+      script: req.script,
+      actor: req.currentUser
+    });
+
+    sendApiOk(
+      res,
+      {
+        scriptVersion: {
+          id: result.scriptVersion.publicId,
+          versionLabel: result.scriptVersion.versionLabel,
+          majorSaveSequence: result.scriptVersion.majorSaveSequence,
+          summary: result.scriptVersion.summary ?? {}
+        },
+        snapshots: result.createdVersions.map(({ version, docType, document }) => ({
+          versionId: version.publicId,
+          docType,
+          docId: document.publicId
+        }))
+      },
+      201
+    );
   })
 );
 

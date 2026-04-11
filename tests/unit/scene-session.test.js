@@ -193,4 +193,40 @@ describe('scene session', () => {
     expect(session.dirty).toBe(false);
     expect(session.lastPersistedRevision).toBe(2);
   });
+
+  it('replaces live scene state during restore without leaving dirty timers behind', () => {
+    const session = createSession();
+    session.addMember({
+      socketId: 'sock-1',
+      user: {
+        _id: 'actor-object-id',
+        publicId: 'usr_realtime_demo'
+      },
+      canEdit: true
+    });
+    session.members.get('sock-1').awarenessClientIds.add(101);
+    session.dirty = true;
+
+    session.replaceDocument({
+      document: {
+        schemaVersion: 1,
+        blocks: [
+          {
+            id: 'blk_restore',
+            type: 'action',
+            text: 'Restored scene draft'
+          }
+        ]
+      },
+      currentMajorVersionId: 'ver_restore_demo',
+      headUpdatedAt: new Date('2026-04-10T12:01:00.000Z'),
+      headRevision: 4
+    });
+
+    expect(session.dirty).toBe(false);
+    expect(session.currentMajorVersionId).toBe('ver_restore_demo');
+    expect(session.latestMajorVersionId).toBe('ver_restore_demo');
+    expect(session.lastPersistedRevision).toBe(4);
+    expect(session.members.get('sock-1').awarenessClientIds.size).toBe(0);
+  });
 });

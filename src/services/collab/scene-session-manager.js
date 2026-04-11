@@ -9,7 +9,8 @@ const toSessionMetadata = (scene) => ({
   publicId: scene.publicId,
   projectPublicId: scene.projectPublicId ?? scene.projectId?.publicId ?? null,
   scriptPublicId: scene.scriptPublicId ?? scene.scriptId?.publicId ?? null,
-  latestMajorVersionId: scene.latestMajorVersionId ?? null,
+  currentMajorVersionId:
+    scene.currentMajorVersionId ?? scene.latestMajorVersionId ?? null,
   headUpdatedAt: scene.headUpdatedAt,
   headRevision: scene.headRevision ?? 0
 });
@@ -60,6 +61,50 @@ export const sceneSessionManager = {
     }
 
     return session.leave(socketId);
+  },
+
+  async flushIfActive(sceneId, reason = 'manual') {
+    const session = this.get(sceneId);
+
+    if (!session) {
+      return null;
+    }
+
+    return session.flush(reason);
+  },
+
+  materializeDocument(sceneId) {
+    const session = this.get(sceneId);
+
+    if (!session) {
+      return null;
+    }
+
+    return session.materializeDocument();
+  },
+
+  replaceDocument(sceneId, payload) {
+    const session = this.get(sceneId);
+
+    if (!session) {
+      return null;
+    }
+
+    return session.replaceDocument(payload);
+  },
+
+  updateCurrentMajorVersionId(sceneId, currentMajorVersionId) {
+    const session = this.get(sceneId);
+
+    if (!session) {
+      return null;
+    }
+
+    session.updateVersionState({
+      currentMajorVersionId
+    });
+
+    return session;
   },
 
   clear() {

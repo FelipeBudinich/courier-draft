@@ -1,7 +1,6 @@
 import { Router } from 'express';
 
 import { asyncRoute } from '../../config/errors.js';
-import { DocumentVersion, Scene } from '../../models/index.js';
 import { loadProjectMembership, requireAuth } from '../../middleware/auth.js';
 import { loadScript } from '../../middleware/resources.js';
 import { getOutlineReadModel } from '../../services/outline/service.js';
@@ -113,22 +112,6 @@ router.get(
       notesPanel,
       notesPanelBootJson: serializeTemplateJson(notesPanel)
     });
-  })
-);
-
-router.get(
-  '/projects/:projectId/scripts/:scriptId/version-sidebar',
-  requireAuth,
-  loadProjectMembership,
-  loadScript,
-  asyncRoute(async (req, res) => {
-    const scenes = await Scene.find({ scriptId: req.script._id }).select('_id');
-    const versions = await DocumentVersion.find({
-      docType: 'scene',
-      docId: { $in: scenes.map((scene) => scene._id) }
-    }).sort({ savedAt: -1 });
-
-    renderFragment(res, 'partials/version-sidebar.njk', { versions });
   })
 );
 

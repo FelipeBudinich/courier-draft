@@ -6,6 +6,7 @@ import { createSaveStateUI } from './save-state-ui.js';
 import { createSceneLoader } from './scene-loader.js';
 import { SceneRealtimeProvider } from './realtime-provider.js';
 import { ScreenplayEditor } from './screenplay-editor.js';
+import { createVersionSidebarController } from './version-sidebar.js';
 
 const createApiError = (payload, fallbackMessage) => {
   const error = new Error(payload?.error?.message ?? fallbackMessage);
@@ -204,6 +205,12 @@ export const initEditorPage = () => {
     locale: document.documentElement.lang || 'en',
     emptyLabel: elements.lastSaved.textContent.trim() || 'Not saved yet'
   });
+  const versionSidebarController = document.querySelector('[data-version-sidebar-shell]')
+    ? createVersionSidebarController({
+        shell: document.querySelector('[data-version-sidebar-shell]'),
+        socket
+      })
+    : null;
   const collabState = createCollabStateManager({
     connectionElement: elements.connectionState,
     connectionLabels: boot.ui.connectionStates,
@@ -232,7 +239,14 @@ export const initEditorPage = () => {
     if (notesShell) {
       notesShell.dataset.sceneId = nextBootstrap.scene.publicId;
     }
+    const versionShell = document.querySelector('[data-version-sidebar-shell]');
+    if (versionShell) {
+      versionShell.dataset.sceneId = nextBootstrap.scene.publicId;
+    }
     getEditorNotesController()?.setSceneContext(nextBootstrap.scene.publicId);
+    void versionSidebarController?.setSceneContext(nextBootstrap.scene.publicId).catch((error) => {
+      collabState.showMessage(error.message);
+    });
     renderPresence();
   };
 
@@ -507,6 +521,16 @@ export const initEditorPage = () => {
     collabState.showMessage('Realtime connection is unavailable.');
   });
 
+  socket.on('scene:version-restored', ({ sceneId }) => {
+    if (sceneId !== state.currentSceneId) {
+      return;
+    }
+
+    void reloadCurrentScene().catch((error) => {
+      collabState.showMessage(error.message);
+    });
+  });
+
   window.addEventListener('courier:notes-list-changed', (event) => {
     if (!state.runtime) {
       return;
@@ -670,5 +694,9 @@ export const initEditorPage = () => {
       projectId: boot.project.publicId
     });
     socket.close();
+  });
+
+  void versionSidebarController?.refresh().catch((error) => {
+    collabState.showMessage(error.message);
   });
 };

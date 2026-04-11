@@ -80,9 +80,11 @@ const sceneSchema = new Schema(
       ref: 'User',
       default: null
     },
-    latestMajorVersionId: {
+    currentMajorVersionId: {
       type: Schema.Types.ObjectId,
-      ref: 'DocumentVersion'
+      ref: 'DocumentVersion',
+      alias: 'latestMajorVersionId',
+      default: null
     }
   },
   {

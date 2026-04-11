@@ -12,6 +12,12 @@ import { validate } from '../../../middleware/validation.js';
 import { noteSessionManager } from '../../../services/collab/note-session-manager.js';
 import { emitToNoteRoom } from '../../../services/realtime/broadcaster.js';
 import {
+  listNoteVersions,
+  majorSaveNote
+} from '../../../services/versioning/checkpoint-service.js';
+import { diffNoteVersions } from '../../../services/versioning/note-diff-service.js';
+import { restoreNoteVersion } from '../../../services/versioning/restore-service.js';
+import {
   createNote,
   deleteNote,
   getNoteDetail,
@@ -39,6 +45,12 @@ const anchorInputSchema = z
 const noteParamsSchema = z.object({
   projectId: z.string().startsWith('prj_'),
   noteId: z.string().startsWith('nte_')
+});
+
+const noteVersionParamsSchema = z.object({
+  projectId: z.string().startsWith('prj_'),
+  noteId: z.string().startsWith('nte_'),
+  versionId: z.string().startsWith('ver_')
 });
 
 const noteListParamsSchema = z.object({
@@ -85,6 +97,31 @@ const noteListQuerySchema = z
     detached: z.enum(['true', 'false']).optional()
   })
   .strict();
+
+const compareSourceSchema = z
+  .object({
+    kind: z.enum(['currentHead', 'version']),
+    versionId: z.string().startsWith('ver_').optional()
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.kind === 'version' && !value.versionId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'versionId is required when kind=version.'
+      });
+    }
+  });
+
+const diffRequestSchema = z.union([
+  z.object({}).strict(),
+  z
+    .object({
+      left: compareSourceSchema,
+      right: compareSourceSchema
+    })
+    .strict()
+]);
 
 router.get(
   '/projects/:projectId/notes',
@@ -210,6 +247,96 @@ router.put(
     });
 
     sendApiOk(res, result);
+  })
+);
+
+router.get(
+  '/projects/:projectId/notes/:noteId/versions',
+  requireAuth,
+  validate({ params: noteParamsSchema }),
+  loadProjectMembership,
+  loadNote,
+  asyncRoute(async (req, res) => {
+    const versions = await listNoteVersions({
+      note: req.note
+    });
+
+    sendApiOk(res, {
+      versions
+    });
+  })
+);
+
+router.post(
+  '/projects/:projectId/notes/:noteId/versions/major-save',
+  requireAuth,
+  validate({ params: noteParamsSchema }),
+  loadProjectMembership,
+  loadNote,
+  requireNoteMutationAccess,
+  asyncRoute(async (req, res) => {
+    const result = await majorSaveNote({
+      project: req.project,
+      note: req.note,
+      actor: req.currentUser
+    });
+
+    sendApiOk(
+      res,
+      {
+        scriptVersion: result.scriptVersion
+          ? {
+              id: result.scriptVersion.publicId,
+              versionLabel: result.scriptVersion.versionLabel,
+              majorSaveSequence: result.scriptVersion.majorSaveSequence
+            }
+          : null,
+        version: {
+          id: result.createdVersions[0].version.publicId,
+          versionLabel: result.createdVersions[0].version.versionLabel
+        }
+      },
+      201
+    );
+  })
+);
+
+router.post(
+  '/projects/:projectId/notes/:noteId/versions/:versionId/restore',
+  requireAuth,
+  validate({ params: noteVersionParamsSchema }),
+  loadProjectMembership,
+  loadNote,
+  requireNoteMutationAccess,
+  asyncRoute(async (req, res) => {
+    const result = await restoreNoteVersion({
+      project: req.project,
+      note: req.note,
+      actor: req.currentUser,
+      versionId: req.params.versionId
+    });
+
+    sendApiOk(res, result);
+  })
+);
+
+router.post(
+  '/projects/:projectId/notes/:noteId/diff',
+  requireAuth,
+  validate({ params: noteParamsSchema, body: diffRequestSchema }),
+  loadProjectMembership,
+  loadNote,
+  asyncRoute(async (req, res) => {
+    const diff = await diffNoteVersions({
+      project: req.project,
+      note: req.note,
+      compare:
+        Object.keys(req.body ?? {}).length > 0
+          ? req.body
+          : null
+    });
+
+    sendApiOk(res, diff);
   })
 );
 

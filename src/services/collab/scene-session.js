@@ -35,17 +35,20 @@ const encodeReply = (encoder) =>
 export class SceneSession {
   constructor({
     scene,
-    onDispose
+    onDispose,
+    createYDoc
   }) {
     this.sceneObjectId = scene._id;
     this.scenePublicId = scene.publicId;
     this.projectPublicId = scene.projectPublicId;
     this.scriptPublicId = scene.scriptPublicId;
-    this.latestMajorVersionId = scene.latestMajorVersionId
-      ? String(scene.latestMajorVersionId)
+    this.currentMajorVersionId = scene.currentMajorVersionId
+      ? String(scene.currentMajorVersionId)
       : null;
+    this.latestMajorVersionId = this.currentMajorVersionId;
     this.ydoc = null;
     this.awareness = null;
+    this.createYDoc = createYDoc;
     this.members = new Map();
     this.dirty = false;
     this.updateSequence = 0;
@@ -69,7 +72,8 @@ export class SceneSession {
   }) {
     const session = new SceneSession({
       scene,
-      onDispose
+      onDispose,
+      createYDoc
     });
 
     session.ydoc = createYDoc(document);
@@ -77,6 +81,57 @@ export class SceneSession {
     session.awareness.setLocalState(null);
 
     return session;
+  }
+
+  materializeDocument() {
+    return materializeCanonicalDocumentFromYDoc(this.ydoc);
+  }
+
+  updateVersionState({ currentMajorVersionId = null } = {}) {
+    this.currentMajorVersionId = currentMajorVersionId
+      ? String(currentMajorVersionId)
+      : null;
+    this.latestMajorVersionId = this.currentMajorVersionId;
+  }
+
+  replaceDocument({
+    document,
+    currentMajorVersionId = null,
+    headUpdatedAt = new Date(),
+    headRevision = this.lastPersistedRevision
+  }) {
+    if (this.persistTimer) {
+      clearTimeout(this.persistTimer);
+      this.persistTimer = null;
+    }
+
+    if (this.safetyTimer) {
+      clearTimeout(this.safetyTimer);
+      this.safetyTimer = null;
+    }
+
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
+
+    this.awareness?.destroy();
+    this.ydoc?.destroy();
+
+    this.ydoc = this.createYDoc(document);
+    this.awareness = new awarenessProtocol.Awareness(this.ydoc);
+    this.awareness.setLocalState(null);
+    this.members.forEach((member) => {
+      member.awarenessClientIds.clear();
+    });
+    this.updateVersionState({
+      currentMajorVersionId
+    });
+    this.dirty = false;
+    this.lastPersistError = null;
+    this.flushPromise = null;
+    this.lastPersistedAt = headUpdatedAt;
+    this.lastPersistedRevision = headRevision;
   }
 
   hasMembers() {
@@ -272,7 +327,7 @@ export class SceneSession {
 
     const sequenceAtFlush = this.updateSequence;
     const actorIdAtFlush = this.lastEditor.actorId;
-    const document = materializeCanonicalDocumentFromYDoc(this.ydoc);
+    const document = this.materializeDocument();
 
     this.flushPromise = persistSceneSessionHead({
       sceneObjectId: this.sceneObjectId,
@@ -364,6 +419,7 @@ export class SceneSession {
       clearTimeout(this.retryTimer);
     }
 
+    this.members.clear();
     this.awareness?.destroy();
     this.ydoc?.destroy();
     this.onDispose?.(this.scenePublicId);

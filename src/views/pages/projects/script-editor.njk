@@ -39,6 +39,25 @@
           </div>
         </div>
         <div class="flex flex-wrap gap-3">
+          <div class="rounded-3xl border border-ink/10 bg-white/70 px-4 py-3">
+            <p class="text-xs uppercase tracking-[0.18em] text-ink/45">Current version</p>
+            <p class="mt-1 text-lg font-semibold text-ink" data-script-current-version-label>
+              {{ script.currentVersionLabel or 'No major save yet' }}
+            </p>
+            <p class="mt-1 text-xs text-ink/55" data-script-last-checkpoint-at>
+              {% if script.lastCheckpointAt %}
+                {{ formatDate(script.lastCheckpointAt) }}
+              {% else %}
+                No checkpoint timestamp yet.
+              {% endif %}
+            </p>
+          </div>
+          {% if permissions.canEdit %}
+            <div class="rounded-3xl border border-ink/10 bg-white/70 px-4 py-3">
+              <button class="btn-primary" type="button" data-script-major-save-primary>Major Save</button>
+              <p class="mt-2 text-sm text-ink/55" data-script-major-save-status></p>
+            </div>
+          {% endif %}
           <a class="btn-primary" href="/projects/{{ project.id }}/scripts/{{ script.id }}">{{ t('pages.scriptActions.backToOverview') }}</a>
         </div>
       </div>
@@ -175,17 +194,32 @@
         </section>
       {% endif %}
 
-      <aside
-        class="space-y-6"
-        data-notes-shell
-        data-project-id="{{ project.id }}"
-        data-script-id="{{ script.id }}"
-        data-scene-id="{{ activeSceneId }}"
-        data-notes-surface="editor"
-        data-notes-fragment-url="/fragments/projects/{{ project.id }}/scripts/{{ script.id }}/notes-panel"
-      >
-        <div data-notes-fragment-target>
-          {% include "partials/notes-panel.njk" %}
+      <aside class="space-y-6">
+        <div
+          data-version-sidebar-shell
+          data-project-id="{{ project.id }}"
+          data-script-id="{{ script.id }}"
+          data-scene-id="{{ activeSceneId }}"
+          data-version-fragment-url="/fragments/projects/{{ project.id }}/scripts/{{ script.id }}/version-sidebar"
+        >
+          <div data-version-fragment-target>
+            <section class="panel space-y-3">
+              <h2 class="text-xl text-ink">{{ t('fragments.versions.heading') }}</h2>
+              <p class="text-sm text-ink/60">Loading version history…</p>
+            </section>
+          </div>
+        </div>
+        <div
+          data-notes-shell
+          data-project-id="{{ project.id }}"
+          data-script-id="{{ script.id }}"
+          data-scene-id="{{ activeSceneId }}"
+          data-notes-surface="editor"
+          data-notes-fragment-url="/fragments/projects/{{ project.id }}/scripts/{{ script.id }}/notes-panel"
+        >
+          <div data-notes-fragment-target>
+            {% include "partials/notes-panel.njk" %}
+          </div>
         </div>
       </aside>
     </section>

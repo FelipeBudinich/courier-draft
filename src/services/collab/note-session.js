@@ -35,15 +35,18 @@ const encodeReply = (encoder) =>
 export class NoteSession {
   constructor({
     note,
-    onDispose
+    onDispose,
+    createYDoc
   }) {
     this.noteObjectId = note._id;
     this.notePublicId = note.publicId;
-    this.latestMajorVersionId = note.currentMajorVersionId
+    this.currentMajorVersionId = note.currentMajorVersionId
       ? String(note.currentMajorVersionId)
       : null;
+    this.latestMajorVersionId = this.currentMajorVersionId;
     this.ydoc = null;
     this.awareness = null;
+    this.createYDoc = createYDoc;
     this.members = new Map();
     this.dirty = false;
     this.updateSequence = 0;
@@ -67,7 +70,8 @@ export class NoteSession {
   }) {
     const session = new NoteSession({
       note,
-      onDispose
+      onDispose,
+      createYDoc
     });
 
     session.ydoc = createYDoc(text);
@@ -75,6 +79,57 @@ export class NoteSession {
     session.awareness.setLocalState(null);
 
     return session;
+  }
+
+  materializeText() {
+    return materializeTextFromNoteYDoc(this.ydoc);
+  }
+
+  updateVersionState({ currentMajorVersionId = null } = {}) {
+    this.currentMajorVersionId = currentMajorVersionId
+      ? String(currentMajorVersionId)
+      : null;
+    this.latestMajorVersionId = this.currentMajorVersionId;
+  }
+
+  replaceText({
+    text,
+    currentMajorVersionId = null,
+    headUpdatedAt = new Date(),
+    headRevision = this.lastPersistedRevision
+  }) {
+    if (this.persistTimer) {
+      clearTimeout(this.persistTimer);
+      this.persistTimer = null;
+    }
+
+    if (this.safetyTimer) {
+      clearTimeout(this.safetyTimer);
+      this.safetyTimer = null;
+    }
+
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
+
+    this.awareness?.destroy();
+    this.ydoc?.destroy();
+
+    this.ydoc = this.createYDoc(text);
+    this.awareness = new awarenessProtocol.Awareness(this.ydoc);
+    this.awareness.setLocalState(null);
+    this.members.forEach((member) => {
+      member.awarenessClientIds.clear();
+    });
+    this.updateVersionState({
+      currentMajorVersionId
+    });
+    this.dirty = false;
+    this.lastPersistError = null;
+    this.flushPromise = null;
+    this.lastPersistedAt = headUpdatedAt;
+    this.lastPersistedRevision = headRevision;
   }
 
   hasMembers() {
@@ -269,7 +324,7 @@ export class NoteSession {
 
     const sequenceAtFlush = this.updateSequence;
     const actorIdAtFlush = this.lastEditor.actorId;
-    const text = materializeTextFromNoteYDoc(this.ydoc);
+    const text = this.materializeText();
 
     this.flushPromise = persistNoteSessionHead({
       noteObjectId: this.noteObjectId,

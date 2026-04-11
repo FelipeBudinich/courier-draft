@@ -21,7 +21,7 @@ export const normalizeScriptMetadataInput = (input = {}) => ({
     : ''
 });
 
-export const serializeScript = (script, counts = {}) => ({
+export const serializeScript = (script, counts = {}, extra = {}) => ({
   id: script.publicId,
   projectId: script.projectId?.publicId ?? null,
   title: script.title,
@@ -32,6 +32,7 @@ export const serializeScript = (script, counts = {}) => ({
   authors: script.authors ?? [],
   majorSaveSequence: script.majorSaveSequence ?? 0,
   currentVersionLabel: script.currentVersionLabel ?? null,
+  lastCheckpointAt: extra.lastCheckpointAt ?? null,
   sceneNumberMode: script.sceneNumberMode,
   createdByUserId: script.createdByUserId?.publicId ?? null,
   updatedByUserId: script.updatedByUserId?.publicId ?? null,

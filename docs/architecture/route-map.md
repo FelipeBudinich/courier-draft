@@ -184,6 +184,9 @@ These routes return JSON and should be treated as the main durable command/read 
 | GET | `/api/v1/projects/:projectId/scripts` | Member | List scripts in a project |
 | POST | `/api/v1/projects/:projectId/scripts` | Editor+ | Create script |
 | GET | `/api/v1/projects/:projectId/scripts/:scriptId` | Member | Script detail read model |
+| GET | `/api/v1/projects/:projectId/scripts/:scriptId/versions` | Member | Script checkpoint list |
+| GET | `/api/v1/projects/:projectId/scripts/:scriptId/versions/:scriptVersionId` | Member | Script checkpoint detail |
+| POST | `/api/v1/projects/:projectId/scripts/:scriptId/versions/major-save` | Editor+ | Create script checkpoint and current version label |
 | PATCH | `/api/v1/projects/:projectId/scripts/:scriptId` | Editor+ | Update script metadata |
 | DELETE | `/api/v1/projects/:projectId/scripts/:scriptId` | Owner | Delete script |
 | PATCH | `/api/v1/projects/:projectId/scripts/:scriptId/scene-numbering` | Editor+ | Set scene numbering mode |

@@ -112,6 +112,35 @@ const setDetailStatus = (state, message, isError = false) => {
   status.classList.toggle('text-ink/55', !isError);
 };
 
+const createCompareSource = (value) => {
+  if (!value || value === 'currentHead') {
+    return {
+      kind: 'currentHead'
+    };
+  }
+
+  const [, versionId] = String(value).split(':');
+  return {
+    kind: 'version',
+    versionId
+  };
+};
+
+const renderDiffSegments = (segments = []) =>
+  segments
+    .map((segment) => {
+      if (segment.kind === 'added') {
+        return `<span class="bg-amber-200">${escapeHtml(segment.text)}</span>`;
+      }
+
+      if (segment.kind === 'deleted') {
+        return `<span class="line-through text-rose-700">${escapeHtml(segment.text)}</span>`;
+      }
+
+      return `<span>${escapeHtml(segment.text)}</span>`;
+    })
+    .join('');
+
 const setSelectionStatus = (state) => {
   const selectionStatus = state.root?.querySelector('[data-anchor-selection-status]');
   const anchorButton = state.root?.querySelector('[data-create-anchored-note]');
@@ -198,6 +227,91 @@ const renderDetail = (state, note) => {
         <button class="btn-secondary" type="button" data-note-reattach hidden>Reattach to selection</button>
         <p class="text-sm text-ink/55" data-note-detail-status></p>
       </div>
+      <section class="space-y-3 rounded-3xl border border-ink/10 bg-paper/40 p-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h4 class="text-lg text-ink">Versions</h4>
+            <p class="text-sm text-ink/60">
+              ${
+                state.activeNoteVersions?.length
+                  ? `${state.activeNoteVersions.length} saved version${state.activeNoteVersions.length === 1 ? '' : 's'}`
+                  : 'No saved versions yet.'
+              }
+            </p>
+          </div>
+          ${
+            note.capabilities?.canEdit
+              ? '<button class="btn-secondary" type="button" data-note-major-save>Major Save</button>'
+              : ''
+          }
+        </div>
+        ${
+          state.activeNoteVersions?.length
+            ? `
+              <form class="grid gap-3 sm:grid-cols-2" data-note-compare-form>
+                <label class="space-y-2">
+                  <span class="text-sm font-semibold text-ink">Left</span>
+                  <select class="input" name="left">
+                    <option value="version:${escapeHtml(state.activeNoteVersions[0].id)}">Latest major save</option>
+                    <option value="currentHead">Current head</option>
+                    ${state.activeNoteVersions
+                      .map(
+                        (version) =>
+                          `<option value="version:${escapeHtml(version.id)}">${escapeHtml(version.versionLabel ?? version.id)}</option>`
+                      )
+                      .join('')}
+                  </select>
+                </label>
+                <label class="space-y-2">
+                  <span class="text-sm font-semibold text-ink">Right</span>
+                  <select class="input" name="right">
+                    <option value="currentHead">Current head</option>
+                    ${state.activeNoteVersions
+                      .map(
+                        (version) =>
+                          `<option value="version:${escapeHtml(version.id)}">${escapeHtml(version.versionLabel ?? version.id)}</option>`
+                      )
+                      .join('')}
+                  </select>
+                </label>
+              </form>
+            `
+            : ''
+        }
+        <div class="space-y-2" data-note-version-list>
+          ${
+            state.activeNoteVersions?.length
+              ? state.activeNoteVersions
+                  .map(
+                    (version) => `
+                      <article class="rounded-2xl border border-ink/10 bg-white/70 px-3 py-3">
+                        <div class="flex items-center justify-between gap-3">
+                          <div>
+                            <p class="font-semibold text-ink">${escapeHtml(version.versionLabel ?? version.id)}</p>
+                            <p class="text-xs text-ink/50">${escapeHtml(new Date(version.savedAt).toLocaleString())}</p>
+                          </div>
+                          <span class="badge">${escapeHtml(version.snapshotType)}</span>
+                        </div>
+                        ${
+                          note.capabilities?.canEdit
+                            ? `<button class="btn-secondary mt-3" type="button" data-note-version-restore="${escapeHtml(version.id)}">Restore</button>`
+                            : ''
+                        }
+                      </article>
+                    `
+                  )
+                  .join('')
+              : '<p class="text-sm text-ink/60">Create a major save to start note history.</p>'
+          }
+        </div>
+        <div class="space-y-3 rounded-2xl border border-ink/10 bg-white/70 p-3" data-note-diff-output>
+          ${
+            state.activeNoteDiff?.hasMajorVersion
+              ? `<p class="text-sm leading-7 text-ink">${renderDiffSegments(state.activeNoteDiff.segments)}</p>`
+              : '<p class="text-sm text-ink/60">No major save exists for this note yet.</p>'
+          }
+        </div>
+      </section>
     </div>
   `;
 
@@ -228,6 +342,42 @@ const fetchNoteDetail = async (state, noteId) => {
   }
 
   return payload.data.note;
+};
+
+const fetchNoteVersions = async (state, noteId) => {
+  const response = await fetch(
+    `/api/v1/projects/${state.boot.project.id}/notes/${noteId}/versions`,
+    {
+      credentials: 'same-origin',
+      headers: {
+        'X-Requested-With': 'fetch'
+      }
+    }
+  );
+  const payload = await readJson(response);
+
+  if (!response.ok || !payload?.ok) {
+    throw new Error(getErrorMessage(payload, 'Note versions could not be loaded.'));
+  }
+
+  return payload.data.versions;
+};
+
+const fetchNoteDiff = async (state, noteId, compare = null) => {
+  const response = await csrfFetch(
+    `/api/v1/projects/${state.boot.project.id}/notes/${noteId}/diff`,
+    {
+      method: 'POST',
+      body: JSON.stringify(compare ?? {})
+    }
+  );
+  const payload = await readJson(response);
+
+  if (!response.ok || !payload?.ok) {
+    throw new Error(getErrorMessage(payload, 'Note diff could not be loaded.'));
+  }
+
+  return payload.data;
 };
 
 const copyNoteText = async (state, noteId) => {
@@ -371,6 +521,65 @@ const bindDetailActions = async (state) => {
     state.pendingAnchor = null;
     await refreshAfterMutation(state, state.activeNoteDetail.id);
   });
+
+  detail.querySelector('[data-note-major-save]')?.addEventListener('click', async () => {
+    const response = await csrfFetch(
+      `/api/v1/projects/${state.boot.project.id}/notes/${state.activeNoteDetail.id}/versions/major-save`,
+      {
+        method: 'POST'
+      }
+    );
+    const payload = await readJson(response);
+
+    if (!response.ok || !payload?.ok) {
+      setDetailStatus(state, getErrorMessage(payload, 'Note major save could not be created.'), true);
+      return;
+    }
+
+    setDetailStatus(state, 'Note major save created.');
+    await refreshAfterMutation(state, state.activeNoteDetail.id);
+  });
+
+  detail.querySelector('[data-note-compare-form]')?.addEventListener('change', async (event) => {
+    const form = event.currentTarget;
+
+    try {
+      setDetailStatus(state, 'Updating note diff…');
+      state.activeNoteDiff = await fetchNoteDiff(state, state.activeNoteDetail.id, {
+        left: createCompareSource(form.elements.left.value),
+        right: createCompareSource(form.elements.right.value)
+      });
+      renderDetail(state, state.activeNoteDetail);
+      await bindDetailActions(state);
+      setDetailStatus(state, 'Note diff updated.');
+    } catch (error) {
+      setDetailStatus(state, error.message, true);
+    }
+  });
+
+  detail.querySelectorAll('[data-note-version-restore]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const confirmed = window.confirm('Restore this note version?');
+      if (!confirmed) {
+        return;
+      }
+
+      const response = await csrfFetch(
+        `/api/v1/projects/${state.boot.project.id}/notes/${state.activeNoteDetail.id}/versions/${button.dataset.noteVersionRestore}/restore`,
+        {
+          method: 'POST'
+        }
+      );
+      const payload = await readJson(response);
+
+      if (!response.ok || !payload?.ok) {
+        setDetailStatus(state, getErrorMessage(payload, 'Note version could not be restored.'), true);
+        return;
+      }
+
+      setDetailStatus(state, 'Note restored.');
+    });
+  });
 };
 
 const openNote = async (state, noteId) => {
@@ -379,7 +588,16 @@ const openNote = async (state, noteId) => {
 
   try {
     const note = await fetchNoteDetail(state, noteId);
+    const [versions, diff] = await Promise.all([
+      fetchNoteVersions(state, noteId),
+      fetchNoteDiff(state, noteId).catch(() => ({
+        hasMajorVersion: false,
+        segments: []
+      }))
+    ]);
     state.activeNoteDetail = note;
+    state.activeNoteVersions = versions;
+    state.activeNoteDiff = diff;
     renderDetail(state, note);
     await bindDetailActions(state);
   } catch (error) {
@@ -449,6 +667,18 @@ const initializeSocket = (state) => {
     scheduleRefresh();
   });
   state.socket.on('note:anchor-detached', ({ noteId }) => {
+    if (noteId === state.activeNoteId) {
+      void openNote(state, noteId);
+    }
+    scheduleRefresh();
+  });
+  state.socket.on('note:version-created', ({ noteId }) => {
+    if (noteId === state.activeNoteId) {
+      void openNote(state, noteId);
+    }
+    scheduleRefresh();
+  });
+  state.socket.on('note:version-restored', ({ noteId }) => {
     if (noteId === state.activeNoteId) {
       void openNote(state, noteId);
     }
@@ -645,6 +875,8 @@ const createState = (shell) => {
     noteRealtime: null,
     activeNoteId: shell.dataset.activeNoteId || null,
     activeNoteDetail: null,
+    activeNoteVersions: [],
+    activeNoteDiff: null,
     pendingAnchor: null,
     refreshTimer: null,
     async refresh({ activeNoteId = state.activeNoteId } = {}) {
@@ -655,6 +887,8 @@ const createState = (shell) => {
 
       state.activeNoteId = activeNoteId ?? null;
       state.activeNoteDetail = null;
+      state.activeNoteVersions = [];
+      state.activeNoteDiff = null;
 
       if (state.shell.dataset.notesFragmentUrl) {
         await loadFragment(state);

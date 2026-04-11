@@ -8,5 +8,5 @@ export { ProjectMember } from './project-member.js';
 export { Project } from './project.js';
 export { Scene } from './scene.js';
 export { Script } from './script.js';
+export { ScriptVersion } from './script-version.js';
 export { User } from './user.js';
-

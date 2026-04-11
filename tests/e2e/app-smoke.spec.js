@@ -14,7 +14,15 @@ test('owner can create a project from the dashboard', async ({ page }) => {
   await expect(page).toHaveURL(/\/projects\/new$/);
 
   await page.getByLabel('Project title').fill('Playwright Project');
+  await expect(page.locator('[data-project-create-ready="true"]')).toBeVisible();
+  const createProjectResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/v1/projects') &&
+      response.request().method() === 'POST' &&
+      response.status() === 201
+  );
   await page.getByRole('button', { name: /create project/i }).click();
+  await createProjectResponse;
 
   await expect(page).toHaveURL(/\/projects\/prj_/);
   await expect(page.getByRole('heading', { name: 'Playwright Project' })).toBeVisible();
@@ -30,7 +38,16 @@ test('pending invitee can accept an invite and see the project on the dashboard'
     has: page.getByRole('heading', { name: /invites/i })
   });
   await expect(invitesSection.getByText('Courier Pilot')).toBeVisible();
+  const acceptInviteResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes('/accept') &&
+      response.request().method() === 'POST' &&
+      response.status() === 200
+  );
   await page.getByRole('button', { name: /accept invite/i }).click();
+  await acceptInviteResponse;
+  await page.waitForLoadState('networkidle');
+  await page.reload();
 
   await expect(page.locator('a[href="/projects/prj_foundation_demo"]')).toBeVisible();
 });

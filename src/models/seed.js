@@ -10,6 +10,7 @@ import {
   Script,
   User
 } from './index.js';
+import { hashDocumentSnapshot } from '../services/versioning/content-hash-service.js';
 
 export const seedFixtures = {
   users: {
@@ -329,11 +330,20 @@ export const seedDevelopmentData = async () => {
         projectId: project._id,
         docType: 'scene',
         docId: scene._id,
+        scriptId: script._id,
+        scriptVersionId: null,
+        snapshotType: 'major',
+        versionSequence: 1,
         versionLabel: '1.0.0',
-        content: scene.headContent,
+        contentSnapshot: seededSceneDocument,
         savedAt: new Date(),
-        createdById: owner._id,
-        isMajor: true
+        savedByUserId: owner._id,
+        restoredFromVersionId: null,
+        headRevisionAtSave: scene.headRevision ?? 0,
+        contentHash: hashDocumentSnapshot({
+          docType: 'scene',
+          contentSnapshot: seededSceneDocument
+        })
       }
     },
     { upsert: true, new: true, setDefaultsOnInsert: true }
@@ -347,11 +357,24 @@ export const seedDevelopmentData = async () => {
         projectId: project._id,
         docType: 'note',
         docId: note._id,
+        scriptId: script._id,
+        scriptVersionId: null,
+        snapshotType: 'major',
+        versionSequence: 1,
         versionLabel: '1.0.0',
-        content: note.headText,
+        contentSnapshot: {
+          text: note.headText
+        },
         savedAt: new Date(),
-        createdById: reviewer._id,
-        isMajor: true
+        savedByUserId: reviewer._id,
+        restoredFromVersionId: null,
+        headRevisionAtSave: note.headRevision ?? 0,
+        contentHash: hashDocumentSnapshot({
+          docType: 'note',
+          contentSnapshot: {
+            text: note.headText
+          }
+        })
       }
     },
     { upsert: true, new: true, setDefaultsOnInsert: true }
@@ -360,7 +383,7 @@ export const seedDevelopmentData = async () => {
   await Promise.all([
     Scene.updateOne(
       { _id: scene._id },
-      { $set: { latestMajorVersionId: sceneVersion._id } }
+      { $set: { currentMajorVersionId: sceneVersion._id } }
     ),
     Note.updateOne(
       { _id: note._id },

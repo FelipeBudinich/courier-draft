@@ -70,7 +70,7 @@ describe('role middleware and placeholder APIs', () => {
     expect(otherNoteResponse.body.error.code).toBe('FORBIDDEN');
   });
 
-  it('returns a real scene bootstrap response while other scene version endpoints stay scaffolded', async () => {
+  it('returns a real scene bootstrap response and a real scene version list', async () => {
     await loginAsUser(stack.request, seedFixtures.users.owner.email);
 
     const bootstrapResponse = await stack.request.get(
@@ -86,7 +86,8 @@ describe('role middleware and placeholder APIs', () => {
       `/api/v1/projects/${seedFixtures.project.publicId}/scripts/${seedFixtures.script.publicId}/scenes/${seedFixtures.scenes.intro.publicId}/versions`
     );
 
-    expect(versionsResponse.status).toBe(501);
-    expect(versionsResponse.body.error.code).toBe('NOT_IMPLEMENTED');
+    expect(versionsResponse.status).toBe(200);
+    expect(Array.isArray(versionsResponse.body.data.versions)).toBe(true);
+    expect(versionsResponse.body.data.versions[0].id).toBe('ver_scene_intro_demo');
   });
 });

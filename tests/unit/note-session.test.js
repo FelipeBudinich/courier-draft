@@ -123,4 +123,22 @@ describe('note session', () => {
     expect(session.dirty).toBe(false);
     expect(session.lastPersistedRevision).toBe(3);
   });
+
+  it('replaces live note state during restore and resets current major version tracking', () => {
+    const session = createSession();
+    session.dirty = true;
+
+    session.replaceText({
+      text: 'Restored note body',
+      currentMajorVersionId: 'ver_note_restore_demo',
+      headUpdatedAt: new Date('2026-04-10T12:02:00.000Z'),
+      headRevision: 7
+    });
+
+    expect(session.materializeText()).toBe('Restored note body');
+    expect(session.dirty).toBe(false);
+    expect(session.currentMajorVersionId).toBe('ver_note_restore_demo');
+    expect(session.latestMajorVersionId).toBe('ver_note_restore_demo');
+    expect(session.lastPersistedRevision).toBe(7);
+  });
 });

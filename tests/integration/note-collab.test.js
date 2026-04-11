@@ -336,4 +336,85 @@ describe('note collaboration realtime', () => {
       ownerSocket.close();
     }
   });
+
+  it('emits note version events and replaces live note session state during restore', async () => {
+    const ownerAgent = supertest.agent(stack.app);
+    const editorAgent = supertest.agent(stack.app);
+    const ownerLogin = await loginAsUser(ownerAgent, seedFixtures.users.owner.email);
+    const editorLogin = await loginAsUser(editorAgent, seedFixtures.users.editor.email);
+    const ownerCsrf = await getPageCsrfToken(ownerAgent, '/app');
+    const ownerSocket = await connectSocket(stack.baseUrl, ownerLogin.cookieHeader);
+    const editorSocket = await connectSocket(stack.baseUrl, editorLogin.cookieHeader);
+
+    try {
+      const note = await Note.findOne({ publicId: OWNER_NOTE_ID });
+      const saveResponse = await ownerAgent
+        .put(`/api/v1/projects/${PROJECT_ID}/notes/${OWNER_NOTE_ID}/head`)
+        .set('X-CSRF-Token', ownerCsrf)
+        .send({
+          baseHeadRevision: note?.headRevision ?? 0,
+          text: 'Realtime note version baseline.'
+        });
+      expect(saveResponse.status).toBe(200);
+
+      await emitWithAck(ownerSocket, 'note:join', {
+        projectId: PROJECT_ID,
+        noteId: OWNER_NOTE_ID
+      });
+      await emitWithAck(editorSocket, 'note:join', {
+        projectId: PROJECT_ID,
+        noteId: OWNER_NOTE_ID
+      });
+
+      const versionCreatedPromise = waitForEvent(
+        editorSocket,
+        'note:version-created',
+        ({ noteId }) => noteId === OWNER_NOTE_ID
+      );
+      const majorSaveResponse = await ownerAgent
+        .post(`/api/v1/projects/${PROJECT_ID}/notes/${OWNER_NOTE_ID}/versions/major-save`)
+        .set('X-CSRF-Token', ownerCsrf)
+        .send({});
+      expect(majorSaveResponse.status).toBe(201);
+
+      const versionCreatedPayload = await versionCreatedPromise;
+      expect(versionCreatedPayload.versionId).toBe(majorSaveResponse.body.data.version.id);
+
+      const ownerDoc = await syncNoteState(ownerSocket, OWNER_NOTE_ID);
+      await syncNoteState(editorSocket, OWNER_NOTE_ID);
+
+      const liveUpdatePromise = waitForEvent(
+        editorSocket,
+        'note:yjs-update',
+        ({ noteId }) => noteId === OWNER_NOTE_ID
+      );
+      const ownerUpdateAck = await emitWithAck(ownerSocket, 'note:yjs-update', {
+        noteId: OWNER_NOTE_ID,
+        payload: createIncrementalTextUpdate(ownerDoc, 'Realtime note restore target')
+      });
+      expect(ownerUpdateAck.ok).toBe(true);
+      await liveUpdatePromise;
+
+      const versionRestoredPromise = waitForEvent(
+        editorSocket,
+        'note:version-restored',
+        ({ noteId }) => noteId === OWNER_NOTE_ID
+      );
+      const restoreResponse = await ownerAgent
+        .post(
+          `/api/v1/projects/${PROJECT_ID}/notes/${OWNER_NOTE_ID}/versions/${majorSaveResponse.body.data.version.id}/restore`
+        )
+        .set('X-CSRF-Token', ownerCsrf)
+        .send({});
+      expect(restoreResponse.status).toBe(200);
+
+      await versionRestoredPromise;
+
+      const restoredDoc = await syncNoteState(editorSocket, OWNER_NOTE_ID);
+      expect(restoredDoc.getText('content').toString()).toBe('Realtime note version baseline.');
+    } finally {
+      ownerSocket.close();
+      editorSocket.close();
+    }
+  });
 });

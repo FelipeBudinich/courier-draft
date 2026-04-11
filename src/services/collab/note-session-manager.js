@@ -64,6 +64,50 @@ export const noteSessionManager = {
     return session.leave(socketId);
   },
 
+  async flushIfActive(noteId, reason = 'manual') {
+    const session = this.get(noteId);
+
+    if (!session) {
+      return null;
+    }
+
+    return session.flush(reason);
+  },
+
+  materializeText(noteId) {
+    const session = this.get(noteId);
+
+    if (!session) {
+      return null;
+    }
+
+    return session.materializeText();
+  },
+
+  replaceText(noteId, payload) {
+    const session = this.get(noteId);
+
+    if (!session) {
+      return null;
+    }
+
+    return session.replaceText(payload);
+  },
+
+  updateCurrentMajorVersionId(noteId, currentMajorVersionId) {
+    const session = this.get(noteId);
+
+    if (!session) {
+      return null;
+    }
+
+    session.updateVersionState({
+      currentMajorVersionId
+    });
+
+    return session;
+  },
+
   clear() {
     for (const session of sessions.values()) {
       session.destroy();

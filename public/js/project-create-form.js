@@ -7,6 +7,8 @@ export const initProjectCreateForm = () => {
     return;
   }
 
+  form.dataset.projectCreateReady = 'true';
+
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     setFormStatus(form, 'Creating…');

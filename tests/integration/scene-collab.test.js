@@ -433,6 +433,98 @@ describe('scene collaboration realtime', () => {
     }
   });
 
+  it('emits scene version events and replaces live scene session state during restore', async () => {
+    const ownerAgent = supertest.agent(stack.app);
+    const editorAgent = supertest.agent(stack.app);
+    const ownerLogin = await loginAsUser(ownerAgent, seedFixtures.users.owner.email);
+    const editorLogin = await loginAsUser(editorAgent, seedFixtures.users.editor.email);
+    const ownerCsrf = await getPageCsrfToken(ownerAgent, '/app');
+    const ownerSocket = await connectSocket(stack.baseUrl, ownerLogin.cookieHeader);
+    const editorSocket = await connectSocket(stack.baseUrl, editorLogin.cookieHeader);
+
+    try {
+      const scene = await Scene.findOne({
+        publicId: seedFixtures.scenes.intro.publicId
+      });
+      const saveResponse = await ownerAgent
+        .put(
+          `/api/v1/projects/${seedFixtures.project.publicId}/scripts/${seedFixtures.script.publicId}/scenes/${seedFixtures.scenes.intro.publicId}/head`
+        )
+        .set('X-CSRF-Token', ownerCsrf)
+        .send({
+          baseHeadRevision: scene?.headRevision ?? 0,
+          document: {
+            schemaVersion: 1,
+            blocks: [
+              {
+                id: 'blk_intro_seed',
+                type: 'action',
+                text: 'Realtime version baseline.'
+              }
+            ]
+          }
+        });
+      expect(saveResponse.status).toBe(200);
+
+      await joinBaseRooms(ownerSocket);
+      await joinBaseRooms(editorSocket);
+      await joinScene(ownerSocket);
+      await joinScene(editorSocket);
+
+      const versionCreatedPromise = waitForEvent(
+        editorSocket,
+        'scene:version-created',
+        ({ sceneId }) => sceneId === seedFixtures.scenes.intro.publicId
+      );
+      const majorSaveResponse = await ownerAgent
+        .post(
+          `/api/v1/projects/${seedFixtures.project.publicId}/scripts/${seedFixtures.script.publicId}/scenes/${seedFixtures.scenes.intro.publicId}/versions/major-save`
+        )
+        .set('X-CSRF-Token', ownerCsrf)
+        .send({});
+      expect(majorSaveResponse.status).toBe(201);
+
+      const versionCreatedPayload = await versionCreatedPromise;
+      expect(versionCreatedPayload.versionId).toBe(majorSaveResponse.body.data.version.id);
+
+      await syncSceneState(ownerSocket);
+      await syncSceneState(editorSocket);
+
+      const liveUpdatePromise = waitForEvent(
+        editorSocket,
+        'scene:yjs-update',
+        ({ sceneId }) => sceneId === seedFixtures.scenes.intro.publicId
+      );
+      const liveUpdateAck = await emitWithAck(ownerSocket, 'scene:yjs-update', {
+        sceneId: seedFixtures.scenes.intro.publicId,
+        payload: createValidUpdate('restore-map', 'token', 'restore-me')
+      });
+      expect(liveUpdateAck.ok).toBe(true);
+      await liveUpdatePromise;
+
+      const versionRestoredPromise = waitForEvent(
+        editorSocket,
+        'scene:version-restored',
+        ({ sceneId }) => sceneId === seedFixtures.scenes.intro.publicId
+      );
+      const restoreResponse = await ownerAgent
+        .post(
+          `/api/v1/projects/${seedFixtures.project.publicId}/scripts/${seedFixtures.script.publicId}/scenes/${seedFixtures.scenes.intro.publicId}/versions/ver_scene_intro_demo/restore`
+        )
+        .set('X-CSRF-Token', ownerCsrf)
+        .send({});
+      expect(restoreResponse.status).toBe(200);
+
+      await versionRestoredPromise;
+
+      const restoredDoc = await syncSceneState(editorSocket);
+      expect(restoredDoc.getMap('restore-map').get('token')).toBeUndefined();
+    } finally {
+      ownerSocket.close();
+      editorSocket.close();
+    }
+  });
+
   it('flushes on last disconnect and safely rejects invalid realtime payloads without crashing the session', async () => {
     const ownerAgent = supertest.agent(stack.app);
     const ownerLogin = await loginAsUser(ownerAgent, seedFixtures.users.owner.email);

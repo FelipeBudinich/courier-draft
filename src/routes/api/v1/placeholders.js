@@ -32,48 +32,6 @@ const placeholderRoutes = [
   },
   {
     method: 'get',
-    path: '/projects/:projectId/scripts/:scriptId/scenes/:sceneId/versions',
-    todo: 'Scene version list',
-    project: true,
-    script: true,
-    scene: true
-  },
-  {
-    method: 'get',
-    path: '/projects/:projectId/scripts/:scriptId/scenes/:sceneId/versions/:versionId',
-    todo: 'Scene version detail',
-    project: true,
-    script: true,
-    scene: true
-  },
-  {
-    method: 'post',
-    path: '/projects/:projectId/scripts/:scriptId/scenes/:sceneId/versions/major-save',
-    todo: 'Scene major save',
-    project: true,
-    script: true,
-    scene: true,
-    role: 'editor'
-  },
-  {
-    method: 'post',
-    path: '/projects/:projectId/scripts/:scriptId/scenes/:sceneId/versions/:versionId/restore',
-    todo: 'Scene version restore',
-    project: true,
-    script: true,
-    scene: true,
-    role: 'editor'
-  },
-  {
-    method: 'post',
-    path: '/projects/:projectId/scripts/:scriptId/scenes/:sceneId/diff',
-    todo: 'Scene diff',
-    project: true,
-    script: true,
-    scene: true
-  },
-  {
-    method: 'get',
     path: '/projects/:projectId/notes',
     todo: 'Project notes read model',
     project: true
@@ -106,36 +64,6 @@ const placeholderRoutes = [
     project: true,
     note: true,
     noteMutation: true
-  },
-  {
-    method: 'get',
-    path: '/projects/:projectId/notes/:noteId/versions',
-    todo: 'Note version list',
-    project: true,
-    note: true
-  },
-  {
-    method: 'post',
-    path: '/projects/:projectId/notes/:noteId/versions/major-save',
-    todo: 'Note major save',
-    project: true,
-    note: true,
-    noteMutation: true
-  },
-  {
-    method: 'post',
-    path: '/projects/:projectId/notes/:noteId/versions/:versionId/restore',
-    todo: 'Note version restore',
-    project: true,
-    note: true,
-    noteMutation: true
-  },
-  {
-    method: 'post',
-    path: '/projects/:projectId/notes/:noteId/diff',
-    todo: 'Note diff',
-    project: true,
-    note: true
   },
   {
     method: 'get',

@@ -20,15 +20,28 @@ test('owner can create and manage a script outline from the browser', async ({ p
   await expect(page).toHaveURL(/\/projects\/prj_foundation_demo\/scripts\/new$/);
 
   await page.getByLabel('Title').fill('Playwright Script');
+  await expect(page.locator('[data-author-row]')).toBeVisible();
   await page.getByRole('button', { name: /create script/i }).click();
 
   await expect(page).toHaveURL(/\/projects\/prj_foundation_demo\/scripts\/scr_/);
   await expect(page.getByRole('heading', { name: 'Playwright Script' })).toBeVisible();
-  const rootOutlineControls = page.locator('[data-outline-root] > div').first();
+  await expect(page.locator('[data-outline-create][data-node-type="act"]').first()).toBeVisible();
 
-  await acceptPrompt(page, rootOutlineControls.getByRole('button', { name: /add act/i }), 'Act I');
-  await acceptPrompt(page, rootOutlineControls.getByRole('button', { name: /add scene/i }), 'Scene One');
-  await acceptPrompt(page, rootOutlineControls.getByRole('button', { name: /add scene/i }), 'Scene Two');
+  await acceptPrompt(
+    page,
+    page.locator('[data-outline-create][data-node-type="act"]').first(),
+    'Act I'
+  );
+  await acceptPrompt(
+    page,
+    page.locator('[data-outline-create][data-node-type="scene"]').first(),
+    'Scene One'
+  );
+  await acceptPrompt(
+    page,
+    page.locator('[data-outline-create][data-node-type="scene"]').first(),
+    'Scene Two'
+  );
 
   await expect(page.getByText('Act I')).toBeVisible();
   await expect(page.getByText('Scene One')).toBeVisible();

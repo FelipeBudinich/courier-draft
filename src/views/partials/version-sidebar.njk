@@ -1,19 +1,116 @@
-<section class="panel space-y-3">
-  <h2 class="text-xl text-ink">{{ t('fragments.versions.heading') }}</h2>
-  {% if versions.length %}
-    <div class="space-y-3">
-      {% for version in versions %}
-        <article class="list-card flex items-center justify-between gap-4">
-          <div>
-            <p class="font-semibold text-ink">{{ version.versionLabel or version.publicId }}</p>
-            <p class="text-xs text-ink/50">{{ formatDate(version.savedAt) }}</p>
-          </div>
-          <span class="badge">{{ version.docType }}</span>
-        </article>
-      {% endfor %}
-    </div>
-  {% else %}
-    <p class="text-sm text-ink/60">{{ t('fragments.versions.empty') }}</p>
-  {% endif %}
-</section>
+<section class="panel space-y-4" data-version-sidebar>
+  <script type="application/json" data-version-sidebar-boot>{{ versionSidebarBootJson | safe }}</script>
 
+  <div class="space-y-1">
+    <h2 class="text-xl text-ink">{{ t('fragments.versions.heading') }}</h2>
+    <p class="text-sm text-ink/60">
+      {% if versionSidebar.script.currentVersionLabel %}
+        Current script version {{ versionSidebar.script.currentVersionLabel }}
+      {% else %}
+        No script checkpoint has been saved yet.
+      {% endif %}
+    </p>
+  </div>
+
+  <section class="space-y-3">
+    <div class="flex items-center justify-between gap-3">
+      <h3 class="text-sm font-semibold uppercase tracking-[0.18em] text-ink/45">Checkpoints</h3>
+      <span class="badge">{{ versionSidebar.scriptVersions.length }}</span>
+    </div>
+    {% if versionSidebar.scriptVersions.length %}
+      <div class="space-y-3">
+        {% for version in versionSidebar.scriptVersions %}
+          <article class="list-card space-y-1">
+            <div class="flex items-center justify-between gap-3">
+              <p class="font-semibold text-ink">{{ version.versionLabel }}</p>
+              <span class="badge">{{ version.scopeType | upper }}</span>
+            </div>
+            <p class="text-xs text-ink/50">{{ formatDate(version.createdAt) }}</p>
+            <p class="text-xs text-ink/55">
+              {{ version.summary.snapshotCount }} snapshot{% if version.summary.snapshotCount != 1 %}s{% endif %}
+            </p>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-sm text-ink/60">{{ t('fragments.versions.empty') }}</p>
+    {% endif %}
+  </section>
+
+  <section class="space-y-3">
+    <div class="flex items-center justify-between gap-3">
+      <div>
+        <h3 class="text-sm font-semibold uppercase tracking-[0.18em] text-ink/45">Active Scene</h3>
+        {% if versionSidebar.activeScene %}
+          <p class="text-sm text-ink">{{ versionSidebar.activeScene.title }}</p>
+        {% else %}
+          <p class="text-sm text-ink/60">Select a scene to compare versions.</p>
+        {% endif %}
+      </div>
+      <div class="flex items-center gap-2">
+        {% if versionSidebar.activeScene %}
+          <span class="badge">{{ versionSidebar.sceneVersions.length }}</span>
+        {% endif %}
+        {% if versionSidebar.activeScene and versionSidebar.permissions.canMajorSave %}
+          <button class="btn-secondary" type="button" data-scene-major-save>Scene Major Save</button>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if versionSidebar.activeScene %}
+      {% if versionSidebar.sceneVersions.length %}
+        <form class="grid gap-3 sm:grid-cols-2" data-scene-compare-form>
+          <label class="space-y-2">
+            <span class="text-sm font-semibold text-ink">Left</span>
+            <select class="input" name="left">
+              <option value="version:{{ versionSidebar.sceneVersions[0].id }}">
+                Latest major save
+              </option>
+              <option value="currentHead">Current head</option>
+              {% for version in versionSidebar.sceneVersions %}
+                <option value="version:{{ version.id }}">{{ version.versionLabel or version.id }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="space-y-2">
+            <span class="text-sm font-semibold text-ink">Right</span>
+            <select class="input" name="right">
+              <option value="currentHead">Current head</option>
+              {% for version in versionSidebar.sceneVersions %}
+                <option value="version:{{ version.id }}">{{ version.versionLabel or version.id }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </form>
+      {% endif %}
+      <p class="text-sm text-ink/55" data-version-sidebar-status></p>
+      <div class="space-y-3" data-scene-version-list>
+        {% if versionSidebar.sceneVersions.length %}
+          {% for version in versionSidebar.sceneVersions %}
+            <article class="list-card space-y-2">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <p class="font-semibold text-ink">{{ version.versionLabel or version.id }}</p>
+                  <p class="text-xs text-ink/50">{{ formatDate(version.savedAt) }}</p>
+                </div>
+                <span class="badge">{{ version.snapshotType | upper }}</span>
+              </div>
+              {% if versionSidebar.permissions.canRestoreScene %}
+                <button
+                  class="btn-secondary"
+                  type="button"
+                  data-scene-version-restore="{{ version.id }}"
+                >
+                  Restore
+                </button>
+              {% endif %}
+            </article>
+          {% endfor %}
+        {% else %}
+          <p class="text-sm text-ink/60">No scene versions are available yet.</p>
+        {% endif %}
+      </div>
+      <div class="space-y-3 rounded-3xl border border-ink/10 bg-white/60 p-4" data-scene-diff-output></div>
+    {% endif %}
+  </section>
+</section>
