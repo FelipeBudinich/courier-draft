@@ -1,0 +1,91 @@
+{% macro renderSelectionTree(nodes, activeSceneId, depth = 0) %}
+  <ol class="space-y-2">
+    {% for node in nodes %}
+      <li class="space-y-2">
+        <div class="rounded-2xl border border-ink/10 bg-white/70 px-3 py-3" style="margin-left: {{ depth * 0.75 }}rem;">
+          <div class="flex flex-wrap items-center gap-2">
+            {% if node.type == 'act' %}
+              <label class="inline-flex items-center gap-2 text-sm text-ink/80">
+                <input type="checkbox" name="actNodeIds" value="{{ node.id }}" />
+                <span>{{ node.title }}</span>
+              </label>
+              <span class="badge">{{ node.type }}</span>
+            {% elif node.type == 'scene' and node.sceneId %}
+              <label class="inline-flex items-center gap-2 text-sm text-ink/80">
+                <input
+                  type="checkbox"
+                  name="sceneIds"
+                  value="{{ node.sceneId }}"
+                  {% if activeSceneId and activeSceneId == node.sceneId %}checked{% endif %}
+                />
+                <span>
+                  {% if node.displaySceneNumber %}{{ node.displaySceneNumber }} · {% endif %}{{ node.title }}
+                </span>
+              </label>
+              <span class="badge">{{ node.type }}</span>
+            {% else %}
+              <span class="text-sm text-ink/80">{{ node.title }}</span>
+              <span class="badge">{{ node.type }}</span>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if node.children.length %}
+          {{ renderSelectionTree(node.children, activeSceneId, depth + 1) }}
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+{% endmacro %}
+
+<article class="panel space-y-4">
+  <div class="space-y-2">
+    <h3 class="text-2xl text-ink">{{ t('pages.scriptSections.export') }}</h3>
+    <p class="text-sm text-ink/60">{{ t('pages.scriptSections.exportHelp') }}</p>
+  </div>
+
+  {% if script.counts.sceneCount %}
+    <form
+      class="space-y-5"
+      data-export-form
+      data-project-id="{{ project.id }}"
+      data-script-id="{{ script.id }}"
+      {% if activeSceneId %}data-active-scene-id="{{ activeSceneId }}"{% endif %}
+    >
+      <label class="space-y-2">
+        <span class="text-sm font-semibold text-ink">{{ t('pages.scriptExport.formatLabel') }}</span>
+        <select class="input" name="format">
+          <option value="standard">{{ t('pages.scriptExport.standardFormat') }}</option>
+          <option value="mobile_9_16">{{ t('pages.scriptExport.mobileFormat') }}</option>
+        </select>
+      </label>
+
+      <fieldset class="space-y-2">
+        <legend class="text-sm font-semibold text-ink">{{ t('pages.scriptExport.scopeLabel') }}</legend>
+        <label class="flex items-center gap-2 text-sm text-ink/80">
+          <input type="radio" name="selectionKind" value="full" checked />
+          <span>{{ t('pages.scriptExport.fullScript') }}</span>
+        </label>
+        <label class="flex items-center gap-2 text-sm text-ink/80">
+          <input type="radio" name="selectionKind" value="partial" />
+          <span>{{ t('pages.scriptExport.partialSelection') }}</span>
+        </label>
+      </fieldset>
+
+      <section class="space-y-3" data-export-selection-panel hidden>
+        <p class="text-sm text-ink/60">{{ t('pages.scriptExport.selectionHelp') }}</p>
+        <div class="max-h-80 space-y-2 overflow-y-auto">
+          {{ renderSelectionTree(outlineNodes, activeSceneId) }}
+        </div>
+      </section>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <button class="btn-primary" type="submit">{{ t('shared.buttons.exportPdf') }}</button>
+        <p class="text-sm text-ink/55" data-form-status></p>
+      </div>
+    </form>
+  {% else %}
+    <p class="text-sm text-ink/60">{{ t('pages.scriptExport.noScenes') }}</p>
+  {% endif %}
+</article>
+

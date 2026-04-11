@@ -1,0 +1,30 @@
+{% macro renderSimpleLine(line) %}
+  <div
+    class="export-line export-line--{{ line.blockType }}{% if line.renderVariant %} export-line--{{ line.renderVariant }}{% endif %}"
+    style="--line-margin-left: {{ line.marginLeftIn }}in; --line-margin-right: {{ line.marginRightIn }}in; --line-align: {{ line.align }};"
+  >
+    {% if line.displaySceneNumber %}
+      <span class="export-scene-number export-scene-number--left">{{ line.displaySceneNumber }}</span>
+      <span class="export-scene-number export-scene-number--right">{{ line.displaySceneNumber }}</span>
+    {% endif %}
+    <span class="export-line__text">{{ line.text }}</span>
+  </div>
+{% endmacro %}
+
+{% macro renderLineSlot(slot) %}
+  <div class="export-line-slot{% if slot and slot.columns %} export-line-slot--dual{% endif %}">
+    {% if slot %}
+      {% if slot.columns %}
+        {% if slot.columns.left %}
+          {{ renderSimpleLine(slot.columns.left) }}
+        {% endif %}
+        {% if slot.columns.right %}
+          {{ renderSimpleLine(slot.columns.right) }}
+        {% endif %}
+      {% else %}
+        {{ renderSimpleLine(slot) }}
+      {% endif %}
+    {% endif %}
+  </div>
+{% endmacro %}
+

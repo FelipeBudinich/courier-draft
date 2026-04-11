@@ -25,10 +25,15 @@
 - Call `/readyz`
 - Confirm `/readyz` fails when Mongo connectivity is intentionally removed in a test environment
 - Confirm a socket connection to `/collab` fails without auth and succeeds with an authenticated session
+- Open a script overview and export a full standard PDF
+- Open a script editor and export a full mobile `9:16` PDF
+- Export a partial scene selection and confirm the numbered pages preserve canonical page numbers
+- Confirm export creates one new activity entry and one new audit entry
+- Confirm export does not create a new major-save checkpoint
 
 ## Release-readiness notes
 
-- Durable business logic for script, outline, scene, note, entity, metrics, and export routes intentionally remains placeholder `501` behavior.
 - Google OAuth requires verified Google emails and configured callback credentials in each environment.
 - Yjs sync events validate payloads but remain intentionally unimplemented.
 - Multi-dyno Socket.IO support is deferred until later realtime epics.
+- PDF export depends on Playwright/Chromium plus installed CJK-capable fonts for multilingual output.

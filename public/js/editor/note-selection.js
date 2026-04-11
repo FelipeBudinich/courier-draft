@@ -19,7 +19,7 @@ export const buildSelectionAnchor = ({
   view,
   sceneId
 }) => {
-  const { selection, doc } = view.state;
+  const { selection } = view.state;
   if (selection.empty) {
     return null;
   }

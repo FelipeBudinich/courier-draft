@@ -28,6 +28,7 @@
       "openProject": "Abrir proyecto",
       "openScript": "Abrir guion",
       "openEditor": "Abrir editor",
+      "exportPdf": "Exportar PDF",
       "save": "Guardar",
       "saveProject": "Guardar proyecto",
       "createProject": "Crear proyecto",
@@ -201,9 +202,21 @@
       "metadataHelp": "Este formulario controla los campos del guion que se guardan de forma durable en la API.",
       "numbering": "Numeración de escenas",
       "numberingHelp": "Elige si las escenas se ocultan, se numeran automáticamente o quedan congeladas para producción.",
+      "export": "Exportación",
+      "exportHelp": "Genera bajo demanda un PDF canónico estándar o un PDF 9:16 para lectura móvil.",
       "summary": "Resumen del guion",
       "outlineMode": "Modo de numeración",
       "dropHint": "Suelta un nodo aquí para agregarlo al final de este contenedor."
+    },
+    "scriptExport": {
+      "formatLabel": "Formato de exportación",
+      "scopeLabel": "Alcance",
+      "fullScript": "Guion completo",
+      "partialSelection": "Actos/escenas seleccionados",
+      "selectionHelp": "Los actos seleccionados incluyen todas sus escenas descendientes. Las escenas elegidas explícitamente se unen respetando el orden canónico.",
+      "standardFormat": "PDF estándar",
+      "mobileFormat": "PDF móvil 9:16",
+      "noScenes": "Este guion todavía no tiene escenas para exportar."
     },
     "scriptActions": {
       "createScript": "Crear guion",

@@ -99,7 +99,7 @@ export const createNoteHighlightController = ({ onOpenNote }) => {
   const plugin = new Plugin({
     key: highlightPluginKey,
     state: {
-      init: (_, state) => ({
+      init: () => ({
         notes: [],
         activeNoteId: null,
         decorations: DecorationSet.empty

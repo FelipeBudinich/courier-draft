@@ -130,6 +130,10 @@
       </div>
 
       <div class="space-y-6">
+        {% if permissions.canExport %}
+          {% include "partials/export-panel.njk" %}
+        {% endif %}
+
         <div
           data-notes-shell
           data-project-id="{{ project.id }}"

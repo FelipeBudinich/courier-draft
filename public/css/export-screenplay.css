@@ -1,0 +1,129 @@
+@page {
+  size: var(--export-page-width) var(--export-page-height);
+  margin: 0;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #f1ece2;
+  color: #111;
+  font-family: var(--export-font-stack);
+}
+
+.export-document {
+  background: #f1ece2;
+}
+
+.export-page,
+.export-title-page {
+  position: relative;
+  width: var(--export-page-width);
+  height: var(--export-page-height);
+  margin: 0 auto;
+  overflow: hidden;
+  background: #fffdf8;
+  break-after: page;
+  page-break-after: always;
+}
+
+.export-page__number {
+  position: absolute;
+  top: var(--export-page-number-top);
+  left: var(--export-page-number-left);
+  font-size: var(--export-font-size);
+  line-height: var(--export-content-line-height);
+}
+
+.export-page__content {
+  position: absolute;
+  top: var(--export-content-top);
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-rows: repeat(55, var(--export-content-line-height));
+}
+
+.export-line-slot {
+  position: relative;
+  height: var(--export-content-line-height);
+}
+
+.export-line {
+  position: relative;
+  margin-left: var(--line-margin-left);
+  margin-right: var(--line-margin-right);
+  font-size: var(--export-font-size);
+  line-height: var(--export-content-line-height);
+  text-align: var(--line-align);
+  white-space: pre;
+}
+
+.export-line__text {
+  display: block;
+  overflow: hidden;
+}
+
+.export-line--transition .export-line__text {
+  letter-spacing: 0.02em;
+}
+
+.export-line--more .export-line__text {
+  letter-spacing: 0.03em;
+}
+
+.export-scene-number {
+  position: absolute;
+  top: 0;
+  font-size: 10pt;
+  line-height: var(--export-content-line-height);
+}
+
+.export-scene-number--left {
+  left: -0.65in;
+}
+
+.export-scene-number--right {
+  right: -0.65in;
+}
+
+.export-title-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.export-title-page__inner {
+  width: 5.5in;
+}
+
+.export-title-page__project,
+.export-title-page__meta,
+.export-title-page__authors {
+  font-size: 12pt;
+  line-height: 18pt;
+}
+
+.export-title-page__project {
+  margin: 0 0 24pt;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.export-title-page__title {
+  margin: 0 0 32pt;
+  font-size: 26pt;
+  line-height: 32pt;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+.export-title-page__authors {
+  margin-bottom: 42pt;
+}
+

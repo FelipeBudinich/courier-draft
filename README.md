@@ -57,6 +57,7 @@ The current foundation includes:
 - Tailwind CSS + screenplay tokens
 - MongoDB/Mongoose models and indexes
 - session, Google auth, onboarding, locale, CSRF, and Socket.IO collaboration flows
+- canonical screenplay pagination and on-demand PDF export
 - Vitest/Supertest/Playwright test foundations
 - Heroku deployment and release-readiness docs
 
@@ -78,3 +79,11 @@ npm run dev
 Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_CALLBACK_URL` in `.env` to use the real Google sign-in flow locally.
 
 For local shell access without full Google OAuth, set `AUTH_BYPASS_ENABLED=true` and use any existing user shown on `/login`.
+
+## Export runtime requirements
+
+PDF export uses Playwright/Chromium plus the runtime font stack defined in the export services. For the best multilingual output locally and on deploy targets:
+
+- ensure Chromium is available to Playwright
+- install a CJK-capable font such as `fonts-noto-cjk` or `fonts-noto-cjk-extra`
+- keep Courier/Courier New available so standard Latin screenplay output stays monospaced

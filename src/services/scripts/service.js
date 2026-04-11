@@ -172,7 +172,8 @@ export const getScriptDetailReadModel = async ({
     activity,
     permissions: {
       canEdit: ['owner', 'editor'].includes(projectRole),
-      canDelete: projectRole === 'owner'
+      canDelete: projectRole === 'owner',
+      canExport: ['owner', 'editor', 'reviewer'].includes(projectRole)
     }
   };
 };

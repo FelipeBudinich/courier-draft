@@ -28,6 +28,7 @@
       "openProject": "プロジェクトを開く",
       "openScript": "脚本を開く",
       "openEditor": "エディターシェルを開く",
+      "exportPdf": "PDF を書き出す",
       "save": "保存",
       "saveProject": "プロジェクトを保存",
       "createProject": "プロジェクトを作成",
@@ -201,9 +202,21 @@
       "metadataHelp": "このフォームは API に永続化される脚本レベルの項目を管理します。",
       "numbering": "シーン番号",
       "numberingHelp": "番号を非表示にするか、自動にするか、制作向けに固定するかを選びます。",
+      "export": "書き出し",
+      "exportHelp": "正規の標準 PDF または 9:16 のモバイル読書用 PDF を都度生成します。",
       "summary": "脚本サマリー",
       "outlineMode": "番号モード",
       "dropHint": "ここにドロップすると、このコンテナの末尾に追加されます。"
+    },
+    "scriptExport": {
+      "formatLabel": "書き出し形式",
+      "scopeLabel": "書き出し範囲",
+      "fullScript": "脚本全体",
+      "partialSelection": "選択した幕 / シーン",
+      "selectionHelp": "選択した幕にはその配下のシーンがすべて含まれます。明示的に選んだシーンは正規順で和集合になります。",
+      "standardFormat": "標準 PDF",
+      "mobileFormat": "9:16 モバイル PDF",
+      "noScenes": "この脚本にはまだ書き出せるシーンがありません。"
     },
     "scriptActions": {
       "createScript": "脚本を作成",

@@ -1,0 +1,28 @@
+{% import "export/line-macros.njk" as lineMacros %}
+<!doctype html>
+<html lang="{{ locale }}">
+  <head>
+    <meta charset="utf-8" />
+    <style>{{ cssText | safe }}</style>
+  </head>
+  <body
+    class="export-document export-document--mobile"
+    style="--export-font-stack: {{ layout.fontCssValue }}; --export-page-width: {{ layout.pageWidthIn }}in; --export-page-height: {{ layout.pageHeightIn }}in; --export-content-top: {{ layout.contentTopIn }}in; --export-content-line-height: {{ layout.lineHeightPt }}pt; --export-font-size: {{ layout.fontSizePt }}pt;"
+  >
+    {% include "export/title-page.njk" %}
+
+    {% for page in pages %}
+      <section class="export-page export-page--mobile">
+        {% if page.standardPageReferenceLabel %}
+          <div class="export-mobile-page__reference">{{ page.standardPageReferenceLabel }}</div>
+        {% endif %}
+        <div class="export-page__content">
+          {% for slot in page.lineSlots %}
+            {{ lineMacros.renderLineSlot(slot) }}
+          {% endfor %}
+        </div>
+      </section>
+    {% endfor %}
+  </body>
+</html>
+

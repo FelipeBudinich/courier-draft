@@ -28,6 +28,7 @@
       "openProject": "Open project",
       "openScript": "Open script",
       "openEditor": "Open editor shell",
+      "exportPdf": "Export PDF",
       "save": "Save",
       "saveProject": "Save project",
       "createProject": "Create project",
@@ -201,9 +202,21 @@
       "metadataHelp": "This form controls the script-level fields that are durable in the API.",
       "numbering": "Scene numbering",
       "numberingHelp": "Choose whether scene numbers are hidden, automatic, or frozen for production planning.",
+      "export": "Export",
+      "exportHelp": "Generate a canonical standard PDF or a 9:16 mobile-reading PDF on demand.",
       "summary": "Script summary",
       "outlineMode": "Numbering mode",
       "dropHint": "Drop a node here to append it inside this container."
+    },
+    "scriptExport": {
+      "formatLabel": "Export format",
+      "scopeLabel": "Export scope",
+      "fullScript": "Full script",
+      "partialSelection": "Selected acts/scenes",
+      "selectionHelp": "Selected acts include all descendant scenes. Explicit scene picks are unioned in canonical order.",
+      "standardFormat": "Standard PDF",
+      "mobileFormat": "9:16 Mobile PDF",
+      "noScenes": "This script does not have any scenes to export yet."
     },
     "scriptActions": {
       "createScript": "Create script",

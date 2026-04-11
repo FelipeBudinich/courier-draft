@@ -6,6 +6,7 @@ Courier Draft ships a production-ready baseline for Heroku with:
 - `heroku-postbuild` running the Tailwind build
 - secure cookie/session defaults
 - readiness checks that fail when Mongo is disconnected
+- on-demand Playwright/Chromium PDF export
 
 ## Required environment variables
 
@@ -49,6 +50,33 @@ Set these in Heroku config vars:
 - Current-head persistence is still written back to MongoDB, but the live collaborative state is not shared across dynos.
 - Run a single app instance for collaborative scene editing until a shared session backend such as Redis is introduced in a later epic.
 
+## PDF export runtime
+
+Courier Draft renders screenplay exports with:
+
+- canonical pagination in app code
+- Nunjucks HTML templates
+- Playwright/Chromium PDF output
+
+For Heroku deployments, provision:
+
+- Chromium available to Playwright at build/runtime
+- system libraries required by headless Chromium on your chosen Heroku stack
+- a CJK-capable font package such as `fonts-noto-cjk` so Japanese export fallback works
+
+Recommended setup:
+
+1. Keep the `playwright` package installed in the slug build.
+2. Add the platform-specific Chromium shared-library dependencies required by Playwright for your stack.
+3. Install `fonts-noto-cjk` or an equivalent Noto CJK package through your stack image or buildpack layer.
+4. Smoke-test both standard and `mobile_9_16` export after deploy.
+
+Operational notes:
+
+- export is generated on demand and not persisted in MongoDB
+- partial exports preserve canonical standard page numbers, so full-script pagination still needs accurate live scene heads
+- if a live collaborative scene flush fails, export fails instead of emitting stale content
+
 ## Recommended deploy flow
 
 1. `npm ci`
@@ -66,3 +94,6 @@ Set these in Heroku config vars:
 - locale switching updates the locale cookie
 - `/app` loads after authentication
 - `/collab` rejects unauthenticated sockets
+- standard screenplay PDF export succeeds
+- mobile `9:16` PDF export succeeds
+- Japanese text exports without missing-glyph fallback failures

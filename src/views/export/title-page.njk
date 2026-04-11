@@ -1,0 +1,21 @@
+<section class="export-title-page">
+  <div class="export-title-page__inner">
+    <p class="export-title-page__project">{{ titlePage.projectTitle }}</p>
+    <h1 class="export-title-page__title">{{ titlePage.scriptTitle }}</h1>
+
+    {% if titlePage.authors.length %}
+      <div class="export-title-page__authors">
+        {% for author in titlePage.authors %}
+          <p>{{ author }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="export-title-page__meta">
+      <p>{{ titlePage.selectionLabel }}</p>
+      <p>Version {{ titlePage.versionLabel }}</p>
+      <p>{{ titlePage.exportDateLabel }}</p>
+    </div>
+  </div>
+</section>
+

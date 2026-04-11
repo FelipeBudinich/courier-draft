@@ -104,13 +104,6 @@ const placeholderRoutes = [
     todo: 'Location metrics',
     project: true
   },
-  {
-    method: 'post',
-    path: '/projects/:projectId/scripts/:scriptId/exports/pdf',
-    todo: 'PDF export',
-    project: true,
-    script: true
-  }
 ];
 
 for (const route of placeholderRoutes) {

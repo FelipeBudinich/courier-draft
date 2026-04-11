@@ -229,6 +229,136 @@ const initScriptDeleteButtons = () => {
   });
 };
 
+const parseDownloadFilename = (contentDisposition) => {
+  if (!contentDisposition) {
+    return 'screenplay.pdf';
+  }
+
+  const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    return decodeURIComponent(utf8Match[1]);
+  }
+
+  const basicMatch = contentDisposition.match(/filename="([^"]+)"/i);
+  return basicMatch?.[1] ?? 'screenplay.pdf';
+};
+
+const buildExportRequestBody = (form) => {
+  const formData = new FormData(form);
+  const selectionKind = String(formData.get('selectionKind') ?? 'full');
+
+  if (selectionKind === 'full') {
+    return {
+      format: String(formData.get('format') ?? 'standard'),
+      selection: {
+        kind: 'full'
+      }
+    };
+  }
+
+  return {
+    format: String(formData.get('format') ?? 'standard'),
+    selection: {
+      kind: 'partial',
+      actNodeIds: formData.getAll('actNodeIds').map((value) => String(value)),
+      sceneIds: formData.getAll('sceneIds').map((value) => String(value))
+    }
+  };
+};
+
+const toggleExportSelectionPanel = (form) => {
+  const panel = form.querySelector('[data-export-selection-panel]');
+  if (!panel) {
+    return;
+  }
+
+  const isPartial =
+    form.querySelector('input[name="selectionKind"]:checked')?.value === 'partial';
+  panel.hidden = !isPartial;
+
+  if (!isPartial) {
+    return;
+  }
+
+  const hasSelection =
+    form.querySelectorAll('input[name="actNodeIds"]:checked, input[name="sceneIds"]:checked')
+      .length > 0;
+
+  if (!hasSelection && form.dataset.activeSceneId) {
+    const activeSceneCheckbox = form.querySelector(
+      `input[name="sceneIds"][value="${form.dataset.activeSceneId}"]`
+    );
+
+    if (activeSceneCheckbox) {
+      activeSceneCheckbox.checked = true;
+    }
+  }
+};
+
+const triggerBlobDownload = ({
+  blob,
+  filename
+}) => {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+};
+
+const initExportForms = () => {
+  document.querySelectorAll('[data-export-form]').forEach((form) => {
+    toggleExportSelectionPanel(form);
+
+    form.addEventListener('change', (event) => {
+      if (event.target instanceof HTMLInputElement && event.target.name === 'selectionKind') {
+        toggleExportSelectionPanel(form);
+      }
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const payload = buildExportRequestBody(form);
+
+      if (
+        payload.selection.kind === 'partial' &&
+        !payload.selection.actNodeIds.length &&
+        !payload.selection.sceneIds.length
+      ) {
+        setFormStatus(form, 'Select at least one act or scene for a partial export.', true);
+        return;
+      }
+
+      setFormStatus(form, 'Generating PDF…');
+
+      const response = await csrfFetch(
+        `/api/v1/projects/${form.dataset.projectId}/scripts/${form.dataset.scriptId}/exports/pdf`,
+        {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        }
+      );
+
+      if (!response.ok) {
+        const result = await readJson(response);
+        setFormStatus(form, getErrorMessage(result, 'PDF export failed.'), true);
+        return;
+      }
+
+      const blob = await response.blob();
+      triggerBlobDownload({
+        blob,
+        filename: parseDownloadFilename(response.headers.get('Content-Disposition'))
+      });
+      setFormStatus(form, 'Download started.');
+    });
+  });
+};
+
 const initOutlineInteractions = () => {
   const shell = document.querySelector('[data-script-shell]');
   const fragmentTarget = shell?.querySelector?.('[data-outline-fragment-target]');
@@ -461,6 +591,7 @@ export const initScriptSurfaces = () => {
   initScriptMetadataForms();
   initSceneNumberForms();
   initScriptDeleteButtons();
+  initExportForms();
   initOutlineInteractions();
   initScriptRealtime();
 };
