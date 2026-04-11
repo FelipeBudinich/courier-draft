@@ -21,6 +21,59 @@ describe('projects, invites, and collaborator management', () => {
     }
   });
 
+  it('auto-assigns epic titles for blank project creation and preserves generated ids', async () => {
+    const ownerAgent = supertest.agent(stack.app);
+    await loginAsUser(ownerAgent, seedFixtures.users.owner.email);
+    const csrfToken = await getPageCsrfToken(ownerAgent, '/app');
+
+    const firstResponse = await ownerAgent
+      .post('/api/v1/projects')
+      .set('X-CSRF-Token', csrfToken)
+      .send({});
+
+    expect(firstResponse.status).toBe(201);
+    expect(firstResponse.body.data.project).toEqual(
+      expect.objectContaining({
+        id: expect.stringMatching(/^prj_/),
+        title: 'Iliad'
+      })
+    );
+
+    const secondResponse = await ownerAgent
+      .post('/api/v1/projects')
+      .set('X-CSRF-Token', csrfToken)
+      .send({
+        title: ''
+      });
+
+    expect(secondResponse.status).toBe(201);
+    expect(secondResponse.body.data.project.title).toBe('Odyssey');
+
+    const storedProjects = await Project.find({
+      publicId: {
+        $in: [firstResponse.body.data.project.id, secondResponse.body.data.project.id]
+      }
+    }).sort({ createdAt: 1 });
+
+    expect(storedProjects.map((project) => project.name)).toEqual(['Iliad', 'Odyssey']);
+  });
+
+  it('preserves explicit project titles when provided', async () => {
+    const ownerAgent = supertest.agent(stack.app);
+    await loginAsUser(ownerAgent, seedFixtures.users.owner.email);
+    const csrfToken = await getPageCsrfToken(ownerAgent, '/app');
+
+    const response = await ownerAgent
+      .post('/api/v1/projects')
+      .set('X-CSRF-Token', csrfToken)
+      .send({
+        title: 'Writer Collaboration Test'
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.project.title).toBe('Writer Collaboration Test');
+  });
+
   it('creates projects, searches existing users, sends invites, and blocks duplicates and self-invites', async () => {
     const invitee = await User.create({
       email: 'invite-target@courier.test',
@@ -40,7 +93,7 @@ describe('projects, invites, and collaborator management', () => {
       .post('/api/v1/projects')
       .set('X-CSRF-Token', csrfToken)
       .send({
-        title: 'Writer Collaboration Test'
+        title: 'Collaboration Invite Project'
       });
 
     expect(projectResponse.status).toBe(201);

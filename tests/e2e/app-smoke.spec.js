@@ -18,7 +18,6 @@ test('owner can create a project from the dashboard', async ({ page }) => {
   await page.getByRole('link', { name: /new project/i }).click();
   await expect(page).toHaveURL(/\/projects\/new$/);
 
-  await page.getByLabel('Project title').fill('Playwright Project');
   await expect(page.locator('[data-project-create-ready="true"]')).toBeVisible();
   const createProjectResponse = page.waitForResponse(
     (response) =>
@@ -30,7 +29,7 @@ test('owner can create a project from the dashboard', async ({ page }) => {
   await createProjectResponse;
 
   await expect(page).toHaveURL(/\/projects\/prj_/);
-  await expect(page.getByRole('heading', { name: 'Playwright Project' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Odyssey' })).toBeVisible();
 });
 
 test('pending invitee can accept an invite and see the project on the dashboard', async ({
@@ -67,5 +66,5 @@ test('onboarding redirects to profile settings and lands on the starter project 
   await page.getByRole('button', { name: /^save$/i }).click();
 
   await expect(page).toHaveURL(/\/projects\/prj_/);
-  await expect(page.getByRole('heading', { name: 'Onboarding Starter' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Iliad' })).toBeVisible();
 });

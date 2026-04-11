@@ -21,6 +21,7 @@ import {
 } from '../realtime/broadcaster.js';
 import { presenceService } from '../presence/service.js';
 import { listProjectScriptsReadModel } from '../scripts/service.js';
+import { getNextDefaultProjectTitle } from './default-project-titles.js';
 
 const MEMBER_STATUS_ORDER = {
   active: 0,
@@ -33,17 +34,6 @@ const MEMBER_ROLE_ORDER = {
   owner: 0,
   editor: 1,
   reviewer: 2
-};
-
-export const getStarterProjectTitle = (locale = 'en') => {
-  switch (locale) {
-    case 'es':
-      return 'Mi primer proyecto';
-    case 'ja':
-      return '最初のプロジェクト';
-    default:
-      return 'My First Project';
-  }
 };
 
 const serializeUserSummary = (user) => ({
@@ -132,6 +122,16 @@ const buildProjectActivityMessage = ({
   }
 };
 
+const resolveProjectTitle = async ({ title, session }) => {
+  const trimmedTitle = String(title ?? '').trim();
+  if (trimmedTitle) {
+    return trimmedTitle;
+  }
+
+  const existingProjects = await Project.find({}, 'name').session(session);
+  return getNextDefaultProjectTitle(existingProjects.map((project) => project.name));
+};
+
 const createProjectRecords = async ({
   owner,
   title,
@@ -139,11 +139,15 @@ const createProjectRecords = async ({
   starter = false
 }) => {
   const now = new Date();
+  const resolvedTitle = await resolveProjectTitle({
+    title,
+    session
+  });
 
   const [project] = await Project.create(
     [
       {
-        name: title,
+        name: resolvedTitle,
         ownerId: owner._id,
         defaultLocale: owner.preferences?.locale || owner.locale,
         status: 'active'
@@ -233,7 +237,6 @@ const createProjectRecords = async ({
 export const createStarterProjectForUser = async ({ user, session }) => {
   const { project } = await createProjectRecords({
     owner: user,
-    title: getStarterProjectTitle(user.preferences?.locale || user.locale),
     session,
     starter: true
   });
@@ -243,11 +246,6 @@ export const createStarterProjectForUser = async ({ user, session }) => {
 };
 
 export const createProjectForUser = async ({ owner, title }) => {
-  const trimmedTitle = title?.trim();
-  if (!trimmedTitle) {
-    throw badRequest('Project title is required.');
-  }
-
   let createdProject = null;
   let createdActivity = null;
 
@@ -256,7 +254,7 @@ export const createProjectForUser = async ({ owner, title }) => {
     await session.withTransaction(async () => {
       const records = await createProjectRecords({
         owner,
-        title: trimmedTitle,
+        title,
         session
       });
 

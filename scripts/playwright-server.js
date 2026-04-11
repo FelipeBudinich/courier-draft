@@ -13,6 +13,9 @@ const { createApp } = await import('../src/app.js');
 const { connectToMongo, disconnectFromMongo } = await import('../src/config/db.js');
 const { seedDevelopmentData } = await import('../src/models/seed.js');
 const { Project, ProjectMember, User } = await import('../src/models/index.js');
+const {
+  getNextDefaultProjectTitle
+} = await import('../src/services/projects/default-project-titles.js');
 const { sceneSessionManager } = await import('../src/services/collab/scene-session-manager.js');
 const { createRealtimeServer } = await import('../src/sockets/index.js');
 const { presenceStore } = await import('../src/sockets/presence-store.js');
@@ -53,11 +56,14 @@ const seedPlaywrightUsers = async () => {
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
+  const existingTitles = (await Project.find({}, 'name')).map((record) => record.name);
+  const starterTitle = getNextDefaultProjectTitle(existingTitles);
+
   const starterProject = await Project.findOneAndUpdate(
-    { name: 'Onboarding Starter' },
+    { ownerId: onboardingUser._id, name: starterTitle },
     {
       $set: {
-        name: 'Onboarding Starter',
+        name: starterTitle,
         ownerId: onboardingUser._id,
         defaultLocale: 'en',
         status: 'active'

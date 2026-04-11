@@ -2,6 +2,7 @@ import supertest from 'supertest';
 import { vi } from 'vitest';
 
 import { Project, ProjectMember, User } from '../../src/models/index.js';
+import { DEFAULT_PROJECT_TITLES } from '../../src/services/projects/default-project-titles.js';
 import {
   extractCsrfToken,
   getPageCsrfToken,
@@ -116,6 +117,7 @@ describe('auth, onboarding, locale, and csrf behavior', () => {
 
     const starterProjects = await Project.find({ ownerId: createdUser._id });
     expect(starterProjects).toHaveLength(1);
+    expect(starterProjects[0].name).toBe(DEFAULT_PROJECT_TITLES[0]);
 
     const memberships = await ProjectMember.find({
       userId: createdUser._id,

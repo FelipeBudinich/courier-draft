@@ -36,7 +36,7 @@ const memberParamsSchema = z.object({
 });
 
 const createProjectSchema = z.object({
-  title: z.string().trim().min(1).max(120)
+  title: z.string().trim().max(120).optional()
 });
 
 const updateProjectSchema = z.object({
