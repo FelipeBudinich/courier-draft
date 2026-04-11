@@ -1,4 +1,5 @@
 import { Project, Scene } from '../../models/index.js';
+import { rebuildProjectEntityRegistry } from '../entities/entity-registry-rebuild.js';
 import { remapAnchoredNotesForScene } from '../notes/service.js';
 import { canonicalDocumentToPlainText } from '../scenes/document-adapter.js';
 import { extractSceneDerivedFields } from '../scenes/derived-fields.js';
@@ -45,6 +46,10 @@ export const persistSceneSessionHead = async ({
       document: normalizedDocument
     });
   }
+
+  await rebuildProjectEntityRegistry({
+    projectId: savedScene.projectId
+  });
 
   return {
     sceneId: savedScene.publicId,

@@ -1,4 +1,5 @@
 import { csrfFetch } from './csrf-fetch.js';
+import { initEntityRegistryPages } from './entity-registry-pages.js';
 import { initInviteActions } from './invite-actions.js';
 import { initInviteForm } from './invite-form.js';
 import { initLocaleSwitcher } from './locale-switcher.js';
@@ -19,6 +20,7 @@ const initializeApp = () => {
   initInviteActions();
   initInviteForm();
   initMemberManagement();
+  initEntityRegistryPages();
   initProjectSettingsForms();
   initProjectPresence();
   initNotesPanels();

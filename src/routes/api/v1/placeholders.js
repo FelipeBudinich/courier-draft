@@ -65,45 +65,6 @@ const placeholderRoutes = [
     note: true,
     noteMutation: true
   },
-  {
-    method: 'get',
-    path: '/projects/:projectId/entities',
-    todo: 'Entity registry read model',
-    project: true
-  },
-  {
-    method: 'post',
-    path: '/projects/:projectId/entities',
-    todo: 'Entity creation',
-    project: true,
-    role: 'editor'
-  },
-  {
-    method: 'patch',
-    path: '/projects/:projectId/entities/:entityId',
-    todo: 'Entity update',
-    project: true,
-    role: 'editor'
-  },
-  {
-    method: 'post',
-    path: '/projects/:projectId/entities/:entityId/merge',
-    todo: 'Entity merge',
-    project: true,
-    role: 'editor'
-  },
-  {
-    method: 'get',
-    path: '/projects/:projectId/metrics/characters',
-    todo: 'Character metrics',
-    project: true
-  },
-  {
-    method: 'get',
-    path: '/projects/:projectId/metrics/locations',
-    todo: 'Location metrics',
-    project: true
-  },
 ];
 
 for (const route of placeholderRoutes) {

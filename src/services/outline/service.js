@@ -8,6 +8,7 @@ import {
   serializeActivityEvent
 } from '../activity/service.js';
 import { createAuditLog } from '../audit/service.js';
+import { rebuildProjectEntityRegistry } from '../entities/entity-registry-rebuild.js';
 import { applySceneNumbering } from '../numbering/service.js';
 import { emitToScriptRoom } from '../realtime/broadcaster.js';
 import { buildOutlineTree } from './read-model.js';
@@ -928,6 +929,7 @@ export const deleteOutlineNode = async ({
   let activityEvent = null;
   let outlineContext = null;
   let renumberedNodeIds = [];
+  let deletedSceneCount = 0;
 
   const session = await mongoose.startSession();
   try {
@@ -960,6 +962,7 @@ export const deleteOutlineNode = async ({
       const deletedSceneIds = subtreeNodes
         .filter((candidate) => candidate.type === 'scene' && candidate.sceneId)
         .map((candidate) => candidate.sceneId);
+      deletedSceneCount = deletedSceneIds.length;
 
       const remainingSceneUpdates = clearDeletedSemanticLinks({
         deletedNodeIds: subtreeNodeIds,
@@ -1040,6 +1043,12 @@ export const deleteOutlineNode = async ({
     });
   } finally {
     await session.endSession();
+  }
+
+  if (deletedSceneCount > 0) {
+    await rebuildProjectEntityRegistry({
+      projectId: project._id
+    });
   }
 
   emitScriptActivity({

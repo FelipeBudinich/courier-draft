@@ -1,4 +1,4 @@
-import { Note, Project, ProjectMember, Scene, Script } from './index.js';
+import { Note, Project, ProjectEntity, ProjectMember, Scene, Script } from './index.js';
 
 export const findProjectMembershipByPublicId = async ({
   projectPublicId,
@@ -46,4 +46,10 @@ export const findNoteByPublicId = ({ projectId, notePublicId }) =>
   Note.findOne({
     projectId,
     publicId: notePublicId
+  });
+
+export const findProjectEntityByPublicId = ({ projectId, entityPublicId }) =>
+  ProjectEntity.findOne({
+    projectId,
+    publicId: entityPublicId
   });

@@ -118,6 +118,45 @@ describe('scene document services', () => {
     expect(editorToCanonicalDocument(editorDocument)).toEqual(canonical);
   });
 
+  it('repairs duplicate block ids when materializing editor documents', () => {
+    const canonical = editorToCanonicalDocument({
+      type: 'doc',
+      content: [
+        {
+          type: 'screenplay_block',
+          attrs: {
+            blockId: 'blk_dup',
+            blockType: 'action'
+          },
+          content: [
+            {
+              type: 'text',
+              text: 'Line one'
+            }
+          ]
+        },
+        {
+          type: 'screenplay_block',
+          attrs: {
+            blockId: 'blk_dup',
+            blockType: 'dialogue'
+          },
+          content: [
+            {
+              type: 'text',
+              text: 'Line two'
+            }
+          ]
+        }
+      ]
+    });
+
+    expect(canonical.blocks).toHaveLength(2);
+    expect(canonical.blocks[0].id).toBe('blk_dup');
+    expect(canonical.blocks[1].id).not.toBe('blk_dup');
+    expect(canonical.blocks[1].text).toBe('Line two');
+  });
+
   it('extracts cached slugline, characters, and locations from the canonical head', () => {
     const derived = extractSceneDerivedFields({
       schemaVersion: 1,

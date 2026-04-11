@@ -1,5 +1,6 @@
 import { createCollabClient } from '../collab-client.js';
 import { createCollabStateManager } from './collab-state.js';
+import { createEntityAutocompleteController } from './entity-autocomplete.js';
 import { createNoteHighlightController } from './note-highlights.js';
 import { buildSelectionAnchor } from './note-selection.js';
 import { createSaveStateUI } from './save-state-ui.js';
@@ -164,7 +165,8 @@ export const initEditorPage = () => {
     dualDialogueButton: page.querySelector('[data-insert-dual-dialogue]'),
     collaboratorSummary: page.querySelector('[data-collaborator-summary]'),
     collaboratorList: page.querySelector('[data-collaborator-list]'),
-    connectionState: document.querySelector('[data-script-connection-state]')
+    connectionState: document.querySelector('[data-script-connection-state]'),
+    autocompleteRoot: page.querySelector('[data-entity-autocomplete-root]')
   };
 
   const state = {
@@ -209,6 +211,12 @@ export const initEditorPage = () => {
     ? createVersionSidebarController({
         shell: document.querySelector('[data-version-sidebar-shell]'),
         socket
+      })
+    : null;
+  const autocompleteController = elements.autocompleteRoot
+    ? createEntityAutocompleteController({
+        root: elements.autocompleteRoot,
+        projectId: boot.project.publicId
       })
     : null;
   const collabState = createCollabStateManager({
@@ -321,6 +329,7 @@ export const initEditorPage = () => {
       },
       onChange(documentValue) {
         setSceneMeta(elements, nextBootstrap, documentValue, nextProvider.canEdit);
+        autocompleteController?.scheduleRefresh();
       },
       onSelectionChange({ blockType, view }) {
         if (elements.blockTypeSelect && blockType) {
@@ -337,6 +346,8 @@ export const initEditorPage = () => {
         } else {
           notesController?.clearSelectionAnchor();
         }
+
+        autocompleteController?.scheduleRefresh();
       }
     });
 
@@ -344,6 +355,7 @@ export const initEditorPage = () => {
       provider: nextProvider,
       editor: nextEditor
     };
+    autocompleteController?.setEditor(nextEditor);
 
     applyBootstrapMeta(
       nextBootstrap,
@@ -522,6 +534,9 @@ export const initEditorPage = () => {
   });
 
   socket.on('scene:version-restored', ({ sceneId }) => {
+    autocompleteController?.invalidateCache();
+    autocompleteController?.scheduleRefresh();
+
     if (sceneId !== state.currentSceneId) {
       return;
     }
@@ -670,6 +685,27 @@ export const initEditorPage = () => {
     });
   });
 
+  socket.on('scene:head-persisted', () => {
+    autocompleteController?.invalidateCache();
+    autocompleteController?.scheduleRefresh();
+  });
+
+  socket.on('outline:changed', () => {
+    autocompleteController?.invalidateCache();
+    autocompleteController?.scheduleRefresh();
+  });
+
+  socket.on('activity:new', (payload) => {
+    if (
+      payload?.type?.startsWith?.('entity.') ||
+      payload?.type?.startsWith?.('outline.') ||
+      payload?.type === 'script.deleted'
+    ) {
+      autocompleteController?.invalidateCache();
+      autocompleteController?.scheduleRefresh();
+    }
+  });
+
   window.addEventListener('popstate', (event) => {
     const nextSceneId = event.state?.sceneId;
 
@@ -683,6 +719,7 @@ export const initEditorPage = () => {
   });
 
   window.addEventListener('beforeunload', () => {
+    autocompleteController?.dispose();
     void state.runtime?.provider?.dispose({
       leaveScene: false
     });

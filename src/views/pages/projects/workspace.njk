@@ -14,6 +14,8 @@
     <div class="mt-5 flex flex-wrap gap-3">
       <a class="btn-secondary" href="/projects/{{ project.id }}/members">{{ t('sections.members') }}</a>
       <a class="btn-secondary" href="/projects/{{ project.id }}/activity">{{ t('sections.activity') }}</a>
+      <a class="btn-secondary" href="/projects/{{ project.id }}/characters">{{ t('pages.projectCharacters.heading') }}</a>
+      <a class="btn-secondary" href="/projects/{{ project.id }}/locations">{{ t('pages.projectLocations.heading') }}</a>
       {% if canManageMembers %}
         <a class="btn-secondary" href="/projects/{{ project.id }}/settings">{{ t('pages.projectSettings.heading') }}</a>
       {% endif %}

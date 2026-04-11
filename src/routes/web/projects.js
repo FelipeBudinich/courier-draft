@@ -8,6 +8,11 @@ import {
 } from '../../middleware/auth.js';
 import { getNotesPanelModel } from '../../services/notes/service.js';
 import {
+  assertProjectScriptFilter,
+  buildProjectEntityPageModel
+} from '../../services/entities/service.js';
+import { rebuildProjectEntityRegistry } from '../../services/entities/entity-registry-rebuild.js';
+import {
   getProjectActivityReadModel,
   getProjectAuditReadModel,
   getProjectMembersReadModel,
@@ -112,11 +117,28 @@ router.get(
   '/projects/:projectId/characters',
   requireAuth,
   loadProjectMembership,
-  asyncRoute(async (_req, res) => {
-    res.render('pages/todo-page.njk', {
-      titleKey: 'pages.projectCharacters.heading',
-      headingKey: 'pages.projectCharacters.heading',
-      descriptionKey: 'pages.projectCharacters.description'
+  asyncRoute(async (req, res) => {
+    await assertProjectScriptFilter({
+      projectId: req.project._id,
+      scriptPublicId: req.query.scriptId ? String(req.query.scriptId) : null
+    });
+    await rebuildProjectEntityRegistry({
+      projectId: req.project._id
+    });
+
+    const page = await buildProjectEntityPageModel({
+      project: req.project,
+      projectRole: req.projectRole,
+      type: 'character',
+      q: req.query.q ? String(req.query.q) : '',
+      scriptId: req.query.scriptId ? String(req.query.scriptId) : null,
+      includeMerged: req.query.includeMerged === 'true',
+      sort: req.query.sort ? String(req.query.sort) : null
+    });
+
+    res.render('pages/projects/characters.njk', {
+      ...page,
+      currentRole: req.projectRole
     });
   })
 );
@@ -125,11 +147,28 @@ router.get(
   '/projects/:projectId/locations',
   requireAuth,
   loadProjectMembership,
-  asyncRoute(async (_req, res) => {
-    res.render('pages/todo-page.njk', {
-      titleKey: 'pages.projectLocations.heading',
-      headingKey: 'pages.projectLocations.heading',
-      descriptionKey: 'pages.projectLocations.description'
+  asyncRoute(async (req, res) => {
+    await assertProjectScriptFilter({
+      projectId: req.project._id,
+      scriptPublicId: req.query.scriptId ? String(req.query.scriptId) : null
+    });
+    await rebuildProjectEntityRegistry({
+      projectId: req.project._id
+    });
+
+    const page = await buildProjectEntityPageModel({
+      project: req.project,
+      projectRole: req.projectRole,
+      type: 'location',
+      q: req.query.q ? String(req.query.q) : '',
+      scriptId: req.query.scriptId ? String(req.query.scriptId) : null,
+      includeMerged: req.query.includeMerged === 'true',
+      sort: req.query.sort ? String(req.query.sort) : null
+    });
+
+    res.render('pages/projects/locations.njk', {
+      ...page,
+      currentRole: req.projectRole
     });
   })
 );

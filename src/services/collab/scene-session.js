@@ -6,7 +6,11 @@ import * as syncProtocol from 'y-protocols/sync';
 import * as Y from 'yjs';
 
 import { logger } from '../../config/logger.js';
-import { emitToSceneRoom } from '../realtime/broadcaster.js';
+import {
+  emitToProjectRoom,
+  emitToSceneRoom,
+  emitToScriptRoom
+} from '../realtime/broadcaster.js';
 import { materializeCanonicalDocumentFromYDoc } from './yjs-scene-adapter.js';
 import { persistSceneSessionHead } from './scene-session-persistence.js';
 
@@ -346,11 +350,29 @@ export class SceneSession {
           this.schedulePersist();
         }
 
-        emitToSceneRoom(this.scenePublicId, 'scene:head-persisted', {
+        const broadcastPayload = {
           sceneId: this.scenePublicId,
           persistedAt: result.headUpdatedAt,
           latestHeadRevision: result.headRevision
-        });
+        };
+
+        emitToSceneRoom(this.scenePublicId, 'scene:head-persisted', broadcastPayload);
+
+        if (this.scriptPublicId) {
+          emitToScriptRoom(
+            this.scriptPublicId,
+            'scene:head-persisted',
+            broadcastPayload
+          );
+        }
+
+        if (this.projectPublicId) {
+          emitToProjectRoom(
+            this.projectPublicId,
+            'scene:head-persisted',
+            broadcastPayload
+          );
+        }
 
         return result;
       })

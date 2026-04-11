@@ -13,6 +13,11 @@ import { getOutlineReadModel } from '../../../services/outline/service.js';
 import { sceneSessionManager } from '../../../services/collab/scene-session-manager.js';
 import { parseSceneHeadSaveRequest } from '../../../services/scenes/document-schema.js';
 import { buildSceneBootstrapPayload } from '../../../services/scenes/scene-bootstrap.js';
+import {
+  emitToProjectRoom,
+  emitToSceneRoom,
+  emitToScriptRoom
+} from '../../../services/realtime/broadcaster.js';
 import { saveSceneHead } from '../../../services/scenes/scene-head-save.js';
 import {
   getSceneVersionDetail,
@@ -142,6 +147,15 @@ router.put(
       baseHeadRevision: payload.baseHeadRevision,
       document: payload.document
     });
+
+    const broadcastPayload = {
+      sceneId: req.scene.publicId,
+      persistedAt: result.headUpdatedAt,
+      latestHeadRevision: result.headRevision
+    };
+    emitToSceneRoom(req.scene.publicId, 'scene:head-persisted', broadcastPayload);
+    emitToScriptRoom(req.script.publicId, 'scene:head-persisted', broadcastPayload);
+    emitToProjectRoom(req.project.publicId, 'scene:head-persisted', broadcastPayload);
 
     sendApiOk(res, result);
   })

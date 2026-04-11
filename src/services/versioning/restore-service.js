@@ -6,6 +6,7 @@ import { buildActivityBroadcast, createActivityEvent } from '../activity/service
 import { createAuditLog } from '../audit/service.js';
 import { noteSessionManager } from '../collab/note-session-manager.js';
 import { sceneSessionManager } from '../collab/scene-session-manager.js';
+import { rebuildProjectEntityRegistry } from '../entities/entity-registry-rebuild.js';
 import { remapAnchoredNotesForScene } from '../notes/service.js';
 import {
   emitToNoteRoom,
@@ -205,6 +206,9 @@ export const restoreSceneVersion = async ({
     scene: restoredScene,
     document: normalizedDocument
   });
+  await rebuildProjectEntityRegistry({
+    projectId: project._id
+  });
 
   sceneSessionManager.replaceDocument(scene.publicId, {
     document: normalizedDocument,
@@ -213,18 +217,25 @@ export const restoreSceneVersion = async ({
     headRevision: restoredScene.headRevision
   });
 
-  emitToSceneRoom(scene.publicId, 'scene:head-persisted', {
+  const persistedPayload = {
     sceneId: scene.publicId,
     persistedAt: restoredScene.headUpdatedAt,
     latestHeadRevision: restoredScene.headRevision
-  });
-  emitToSceneRoom(scene.publicId, 'scene:version-restored', {
+  };
+  const restoredPayload = {
     sceneId: scene.publicId,
     restoredFromVersionId: restoredFromVersion.publicId,
     newHeadVersionId: restoreVersion.publicId,
     actor: serializeActor(actor),
     ts: new Date().toISOString()
-  });
+  };
+
+  emitToSceneRoom(scene.publicId, 'scene:head-persisted', persistedPayload);
+  emitToScriptRoom(script.publicId, 'scene:head-persisted', persistedPayload);
+  emitToProjectRoom(project.publicId, 'scene:head-persisted', persistedPayload);
+  emitToSceneRoom(scene.publicId, 'scene:version-restored', restoredPayload);
+  emitToScriptRoom(script.publicId, 'scene:version-restored', restoredPayload);
+  emitToProjectRoom(project.publicId, 'scene:version-restored', restoredPayload);
   emitVersionActivity({
     projectPublicId: project.publicId,
     scriptPublicId: script.publicId,

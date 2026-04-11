@@ -4,6 +4,24 @@ import { publicIdPlugin } from './plugins/public-id.js';
 
 const { Schema } = mongoose;
 
+const entityAliasSchema = new Schema(
+  {
+    display: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    normalizedKey: {
+      type: String,
+      required: true,
+      trim: true
+    }
+  },
+  {
+    _id: false
+  }
+);
+
 const projectEntitySchema = new Schema(
   {
     projectId: {
@@ -22,13 +40,22 @@ const projectEntitySchema = new Schema(
       required: true,
       trim: true
     },
+    normalizedKey: {
+      type: String,
+      required: true,
+      trim: true
+    },
     aliases: {
-      type: [String],
+      type: [entityAliasSchema],
       default: []
     },
     mergedIntoId: {
       type: Schema.Types.ObjectId,
       ref: 'ProjectEntity'
+    },
+    latestStats: {
+      type: Schema.Types.Mixed,
+      default: {}
     }
   },
   {
@@ -39,8 +66,17 @@ const projectEntitySchema = new Schema(
 
 projectEntitySchema.plugin(publicIdPlugin, { prefix: 'ent' });
 projectEntitySchema.index({ projectId: 1, type: 1, canonicalName: 1 });
+projectEntitySchema.index(
+  { projectId: 1, type: 1, normalizedKey: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      mergedIntoId: null
+    }
+  }
+);
+projectEntitySchema.index({ projectId: 1, mergedIntoId: 1 });
 
 export const ProjectEntity =
   mongoose.models.ProjectEntity ??
   mongoose.model('ProjectEntity', projectEntitySchema);
-

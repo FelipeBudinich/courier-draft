@@ -1,9 +1,11 @@
 import { Router } from 'express';
 
 import { setSurface } from '../../../middleware/request-context.js';
+import entitiesRouter from './entities.js';
 import exportsRouter from './exports.js';
 import invitesRouter from './invites.js';
 import meRouter from './me.js';
+import metricsRouter from './metrics.js';
 import notesRouter from './notes.js';
 import placeholdersRouter from './placeholders.js';
 import projectsRouter from './projects.js';
@@ -22,6 +24,8 @@ router.use(exportsRouter);
 router.use(scriptsRouter);
 router.use(scenesRouter);
 router.use(notesRouter);
+router.use(entitiesRouter);
+router.use(metricsRouter);
 router.use(placeholdersRouter);
 
 export default router;

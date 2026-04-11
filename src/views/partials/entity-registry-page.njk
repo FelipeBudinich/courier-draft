@@ -1,0 +1,255 @@
+<div
+  class="space-y-6"
+  data-entity-registry-page
+  data-project-id="{{ project.id }}"
+  data-entity-type="{{ type }}"
+>
+  <section class="hero-panel">
+    <div class="flex flex-wrap items-center gap-3">
+      <span class="badge">{{ t('shared.badges.' + currentRole) }}</span>
+      <span class="badge">{{ rows.length }} entries</span>
+      {% if filters.scriptId %}
+        <span class="badge">Filtered by script</span>
+      {% endif %}
+    </div>
+    <div class="mt-4 flex flex-wrap items-start justify-between gap-4">
+      <div class="max-w-3xl space-y-3">
+        <h2 class="text-4xl text-ink">
+          {% if type == 'character' %}
+            {{ t('pages.projectCharacters.heading') }}
+          {% else %}
+            {{ t('pages.projectLocations.heading') }}
+          {% endif %}
+        </h2>
+        <p class="text-lg leading-8 text-ink/70">
+          {% if type == 'character' %}
+            Latest-draft character registry, dialogue counts, and scene/script appearances.
+          {% else %}
+            Latest-draft location registry and scene/script appearances.
+          {% endif %}
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <a class="btn-secondary" href="/projects/{{ project.id }}">Open project</a>
+        {% if type == 'character' %}
+          <a class="btn-secondary" href="/projects/{{ project.id }}/locations">View locations</a>
+        {% else %}
+          <a class="btn-secondary" href="/projects/{{ project.id }}/characters">View characters</a>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="grid gap-6 xl:grid-cols-[1.3fr,0.7fr]">
+    <article class="panel space-y-5">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-2xl text-ink">Filters</h3>
+          <p class="text-sm text-ink/60">Search canonical names or aliases and narrow the latest draft by script.</p>
+        </div>
+      </div>
+      <form class="grid gap-4 lg:grid-cols-[1.5fr,1fr,1fr,auto]" method="get">
+        <label class="space-y-2">
+          <span class="text-sm font-semibold text-ink">Search</span>
+          <input class="input" type="text" name="q" value="{{ filters.q }}" placeholder="Search names or aliases" />
+        </label>
+        <label class="space-y-2">
+          <span class="text-sm font-semibold text-ink">Script</span>
+          <select class="input" name="scriptId">
+            <option value="">All scripts</option>
+            {% for script in scripts %}
+              <option value="{{ script.id }}" {% if filters.scriptId == script.id %}selected{% endif %}>{{ script.title }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="space-y-2">
+          <span class="text-sm font-semibold text-ink">Sort</span>
+          <select class="input" name="sort">
+            <option value="canonicalName" {% if filters.sort == 'canonicalName' %}selected{% endif %}>Canonical name</option>
+            <option value="sceneCount" {% if filters.sort == 'sceneCount' %}selected{% endif %}>Scene count</option>
+            <option value="scriptCount" {% if filters.sort == 'scriptCount' %}selected{% endif %}>Script count</option>
+            {% if type == 'character' %}
+              <option value="dialogueBlockCount" {% if filters.sort == 'dialogueBlockCount' %}selected{% endif %}>Dialogue blocks</option>
+              <option value="dialogueLineCount" {% if filters.sort == 'dialogueLineCount' %}selected{% endif %}>Dialogue lines</option>
+            {% endif %}
+          </select>
+        </label>
+        <div class="flex flex-col justify-end gap-3">
+          <label class="inline-flex items-center gap-2 text-sm text-ink/70">
+            <input type="checkbox" name="includeMerged" value="true" {% if filters.includeMerged %}checked{% endif %} />
+            Include merged
+          </label>
+          <button class="btn-primary" type="submit">Apply</button>
+        </div>
+      </form>
+    </article>
+
+    {% if permissions.canManage %}
+      <article class="panel space-y-5">
+        <div>
+          <h3 class="text-2xl text-ink">Create {{ type }}</h3>
+          <p class="text-sm text-ink/60">Manual entries create activity and audit records. Aliases are comma-separated.</p>
+        </div>
+        <form
+          class="space-y-4"
+          data-entity-create-form
+          data-project-id="{{ project.id }}"
+          data-entity-type="{{ type }}"
+        >
+          <label class="space-y-2">
+            <span class="text-sm font-semibold text-ink">Canonical name</span>
+            <input class="input" type="text" name="canonicalName" maxlength="160" required />
+          </label>
+          <label class="space-y-2">
+            <span class="text-sm font-semibold text-ink">Aliases</span>
+            <input class="input" type="text" name="aliases" maxlength="1000" placeholder="Comma-separated aliases" />
+          </label>
+          <div class="flex items-center gap-3">
+            <button class="btn-primary" type="submit">Create</button>
+            <p class="text-sm text-ink/55" data-form-status></p>
+          </div>
+        </form>
+      </article>
+    {% endif %}
+  </section>
+
+  <section class="panel space-y-5">
+    <div class="flex items-center justify-between gap-3">
+      <div>
+        <h3 class="text-2xl text-ink">Metrics</h3>
+        <p class="text-sm text-ink/60">Occurrences come from current scene heads only.</p>
+      </div>
+    </div>
+
+    {% if rows.length %}
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-ink/10 text-left text-sm">
+          <thead>
+            <tr class="text-xs uppercase tracking-[0.18em] text-ink/50">
+              <th class="px-3 py-3">Canonical</th>
+              <th class="px-3 py-3">Aliases</th>
+              <th class="px-3 py-3">Scenes</th>
+              <th class="px-3 py-3">Scripts</th>
+              {% if type == 'character' %}
+                <th class="px-3 py-3">Dialogue blocks</th>
+                <th class="px-3 py-3">Dialogue lines</th>
+              {% endif %}
+              <th class="px-3 py-3">Occurrences</th>
+              {% if permissions.canManage %}
+                <th class="px-3 py-3">Controls</th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-ink/10">
+            {% for row in rows %}
+              <tr>
+                <td class="px-3 py-4 align-top">
+                  <div class="space-y-1">
+                    <p class="font-semibold text-ink">{{ row.canonicalName }}</p>
+                    {% if row.isMerged %}
+                      <p class="text-xs text-ink/55">Merged into {{ row.mergedIntoCanonicalName or row.mergedIntoId }}</p>
+                    {% endif %}
+                  </div>
+                </td>
+                <td class="px-3 py-4 align-top text-ink/70">
+                  {% if row.aliases.length %}
+                    {{ row.aliasDisplayString }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="px-3 py-4 align-top text-ink">{{ row.latestStats.sceneCount }}</td>
+                <td class="px-3 py-4 align-top text-ink">{{ row.latestStats.scriptCount }}</td>
+                {% if type == 'character' %}
+                  <td class="px-3 py-4 align-top text-ink">{{ row.latestStats.dialogueBlockCount }}</td>
+                  <td class="px-3 py-4 align-top text-ink">{{ row.latestStats.dialogueLineCount }}</td>
+                {% endif %}
+                <td class="px-3 py-4 align-top">
+                  {% if row.occurrences.length %}
+                    <div class="space-y-2 text-sm">
+                      {% for occurrence in row.occurrences %}
+                        <div class="rounded-2xl border border-ink/10 bg-mist/40 px-3 py-2">
+                          <a class="font-semibold text-ink underline-offset-4 hover:underline" href="{{ occurrence.editorPath }}">
+                            {% if occurrence.displaySceneNumber %}{{ occurrence.displaySceneNumber }} · {% endif %}{{ occurrence.sceneTitle }}
+                          </a>
+                          <p class="text-xs text-ink/60">{{ occurrence.scriptTitle }}</p>
+                          {% if type == 'character' %}
+                            <p class="text-xs text-ink/60">{{ occurrence.dialogueBlockCount }} blocks · {{ occurrence.dialogueLineCount }} lines</p>
+                          {% endif %}
+                        </div>
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    <span class="text-ink/50">—</span>
+                  {% endif %}
+                </td>
+                {% if permissions.canManage %}
+                  <td class="px-3 py-4 align-top">
+                    {% if not row.isMerged %}
+                      <div class="space-y-3">
+                        <details class="rounded-2xl border border-ink/10 bg-white/70 px-3 py-3">
+                          <summary class="cursor-pointer font-semibold text-ink">Edit</summary>
+                          <form
+                            class="mt-3 space-y-3"
+                            data-entity-update-form
+                            data-project-id="{{ project.id }}"
+                            data-entity-id="{{ row.id }}"
+                          >
+                            <label class="space-y-1 block">
+                              <span class="text-xs uppercase tracking-[0.18em] text-ink/45">Canonical name</span>
+                              <input class="input" type="text" name="canonicalName" value="{{ row.canonicalName }}" maxlength="160" required />
+                            </label>
+                            <label class="space-y-1 block">
+                              <span class="text-xs uppercase tracking-[0.18em] text-ink/45">Aliases</span>
+                              <input class="input" type="text" name="aliases" value="{{ row.aliasDisplayString }}" maxlength="1000" />
+                            </label>
+                            <div class="flex items-center gap-3">
+                              <button class="btn-secondary" type="submit">Save</button>
+                              <p class="text-sm text-ink/55" data-form-status></p>
+                            </div>
+                          </form>
+                        </details>
+
+                        {% if activeCanonicalCount > 1 %}
+                          <details class="rounded-2xl border border-ink/10 bg-white/70 px-3 py-3">
+                            <summary class="cursor-pointer font-semibold text-ink">Merge</summary>
+                            <form
+                              class="mt-3 space-y-3"
+                              data-entity-merge-form
+                              data-project-id="{{ project.id }}"
+                              data-entity-id="{{ row.id }}"
+                            >
+                              <label class="space-y-1 block">
+                                <span class="text-xs uppercase tracking-[0.18em] text-ink/45">Target canonical entity</span>
+                                <select class="input" name="targetEntityId" required>
+                                  <option value="">Select target</option>
+                                  {% for target in rows %}
+                                    {% if not target.isMerged and target.id != row.id %}
+                                      <option value="{{ target.id }}">{{ target.canonicalName }}</option>
+                                    {% endif %}
+                                  {% endfor %}
+                                </select>
+                              </label>
+                              <div class="flex items-center gap-3">
+                                <button class="btn-secondary" type="submit">Merge</button>
+                                <p class="text-sm text-ink/55" data-form-status></p>
+                              </div>
+                            </form>
+                          </details>
+                        {% endif %}
+                      </div>
+                    {% else %}
+                      <span class="text-sm text-ink/50">Read-only merged entry</span>
+                    {% endif %}
+                  </td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-sm text-ink/60">No {{ type }} entries match the current latest-draft filters.</p>
+    {% endif %}
+  </section>
+</div>

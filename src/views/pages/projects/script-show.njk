@@ -20,6 +20,8 @@
       <p class="mt-3 max-w-3xl text-lg leading-8 text-ink/70">{{ t('pages.script.description') }}</p>
       <div class="mt-5 flex flex-wrap gap-3">
         <a class="btn-primary" href="/projects/{{ project.id }}/scripts/{{ script.id }}/editor">{{ t('shared.buttons.openEditor') }}</a>
+        <a class="btn-secondary" href="/projects/{{ project.id }}/characters?scriptId={{ script.id }}">{{ t('pages.projectCharacters.heading') }}</a>
+        <a class="btn-secondary" href="/projects/{{ project.id }}/locations?scriptId={{ script.id }}">{{ t('pages.projectLocations.heading') }}</a>
         <a class="btn-secondary" href="/projects/{{ project.id }}">{{ t('shared.buttons.openProject') }}</a>
       </div>
     </section>

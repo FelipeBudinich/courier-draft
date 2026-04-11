@@ -1,5 +1,6 @@
 import { emptySceneDocument } from './document-constants.js';
 import { parseCanonicalSceneDocument } from './document-schema.js';
+import { generateBlockId } from './block-ids.js';
 
 const buildTextContentNodes = (text) => {
   if (!text) {
@@ -105,6 +106,35 @@ const fromEditorNode = (node) => {
   throw new Error(`Unsupported editor node type "${node.type}".`);
 };
 
+const repairCanonicalBlockIds = (blocks, usedIds = new Set()) =>
+  blocks.map((block) => {
+    let nextId = block.id;
+
+    // Realtime editor flows can occasionally materialize duplicate or missing
+    // ids when browsers inject multiline content into contenteditable blocks.
+    // Repairing them here keeps persistence resilient without weakening the
+    // canonical schema checks for direct server-side inputs.
+    if (!nextId || usedIds.has(nextId)) {
+      nextId = generateBlockId();
+    }
+
+    usedIds.add(nextId);
+
+    if (block.type !== 'dual_dialogue') {
+      return {
+        ...block,
+        id: nextId
+      };
+    }
+
+    return {
+      ...block,
+      id: nextId,
+      left: repairCanonicalBlockIds(block.left ?? [], usedIds),
+      right: repairCanonicalBlockIds(block.right ?? [], usedIds)
+    };
+  });
+
 const flattenCanonicalBlocksToLines = (blocks, lines = []) => {
   for (const block of blocks) {
     if (block.type === 'dual_dialogue') {
@@ -133,7 +163,9 @@ export const editorToCanonicalDocument = (editorDocument) => {
     throw new Error('Editor document must be a ProseMirror doc node.');
   }
 
-  const blocks = (editorDocument.content ?? []).map(fromEditorNode);
+  const blocks = repairCanonicalBlockIds(
+    (editorDocument.content ?? []).map(fromEditorNode)
+  );
 
   return parseCanonicalSceneDocument({
     ...emptySceneDocument(),

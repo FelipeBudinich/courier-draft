@@ -2,6 +2,7 @@ import { ZodError } from 'zod';
 
 import { badRequest, staleState } from '../../config/errors.js';
 import { Project, Scene } from '../../models/index.js';
+import { rebuildProjectEntityRegistry } from '../entities/entity-registry-rebuild.js';
 import { remapAnchoredNotesForScene } from '../notes/service.js';
 import { canonicalDocumentToPlainText } from './document-adapter.js';
 import { extractSceneDerivedFields } from './derived-fields.js';
@@ -91,6 +92,10 @@ export const saveSceneHead = async ({
       document: getSceneHeadDocument(savedScene)
     });
   }
+
+  await rebuildProjectEntityRegistry({
+    projectId: savedScene.projectId
+  });
 
   return {
     sceneId: savedScene.publicId,

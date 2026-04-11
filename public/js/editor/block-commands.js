@@ -30,7 +30,7 @@ const getMappedSelection = (transaction, selection) => ({
   to: transaction.mapping.map(selection.to)
 });
 
-const getCurrentBlockInfo = (state) => {
+export const getCurrentBlockInfo = (state) => {
   const fromBlock = getBlockInfoFromSelection(state.selection.$from);
   const toBlock = getBlockInfoFromSelection(state.selection.$to);
 

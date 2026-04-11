@@ -11,6 +11,7 @@ import {
 } from '../../models/index.js';
 import { createActivityEvent } from '../activity/service.js';
 import { createAuditLog } from '../audit/service.js';
+import { rebuildProjectEntityRegistry } from '../entities/entity-registry-rebuild.js';
 import { synchronizeSceneNumbering, getOutlineReadModel, getScriptActivitySummary } from '../outline/service.js';
 import { emitToScriptRoom } from '../realtime/broadcaster.js';
 import {
@@ -226,6 +227,10 @@ export const createScript = async ({
   } finally {
     await session.endSession();
   }
+
+  await rebuildProjectEntityRegistry({
+    projectId: project._id
+  });
 
   emitScriptActivity({
     projectPublicId: project.publicId,
